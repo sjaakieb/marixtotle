@@ -1,68 +1,70 @@
-import Image from "next/image";
+import Link from "next/link";
+import { chapters } from "@/content/chapters";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-dvh bg-stone-50">
+      <header className="mx-auto max-w-3xl px-5 py-6 sm:py-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 font-bold text-white">
+            L
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-stone-900">
+              Latijn Trainer
+            </h1>
+            <p className="text-sm text-stone-600">
+              Duolingo-variant voor huiswerk • Nederlands ↔ Latijn
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-5 pb-12">
+        <div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200 sm:p-8">
+          <h2 className="text-lg font-semibold text-stone-900">Kies een hoofdstuk</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            Alle oefeningen zijn strict: hoofdletter maakt niet uit, maar macrons (ā ē ī ō ū) wel. Gebruik de macron-balk bij Latijnse antwoorden.
           </p>
+
+          <div className="mt-6 grid gap-4">
+            {chapters.map((ch) => (
+              <Link
+                key={ch.id}
+                href={`/play/${ch.id}`}
+                className="group rounded-xl border border-stone-200 bg-white p-4 hover:border-sky-300 hover:bg-sky-50/50 transition"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="font-semibold text-stone-900 group-hover:text-sky-700">
+                      {ch.title}
+                    </div>
+                    {ch.description && (
+                      <div className="mt-1 text-sm text-stone-600">{ch.description}</div>
+                    )}
+                    <div className="mt-2 text-xs font-medium text-stone-500">
+                      {ch.exercises.length} oefeningen • Woordenschat & verbuiging
+                    </div>
+                  </div>
+                  <div className="shrink-0 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white group-hover:bg-sky-700">
+                    Start →
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8 rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <div className="text-sm font-semibold text-amber-900">Zelf content toevoegen?</div>
+            <div className="mt-1 text-sm text-amber-800">
+              Bewerk <code className="rounded bg-amber-900/10 px-1 py-0.5 font-mono text-xs">src/content/chapters.ts</code> — voeg een nieuw object toe aan <code className="font-mono">rawChapters</code>. Zie Caput 3 als voorbeeld. Nieuwe hoofdstukken verschijnen automatisch.
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <footer className="mt-6 text-center text-xs text-stone-400">
+          Geen accounts, geen opslag. Alles draait lokaal in je browser. • Gebouwd voor CapRover / Coolify
+        </footer>
       </main>
     </div>
   );

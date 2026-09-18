@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Latijn Trainer
 
-## Getting Started
+Duolingo-variant for Latin homework – Nederlands ↔ Latijn. Weekend MVP, web only, no backend/DB.
 
-First, run the development server:
+## Features
+- **Woordenschat** `nl→la` and `la→nl` + **verbuiging/vervoeging** drills
+- **Text input** or **multiple choice** per exercise (explicit `options` in JSON)
+- **Strict matching**: case-insensitive, whitespace-agnostic, **macron-sensitive** (`puella` ≠ `puellā`)
+- **Macron toolbar**: clickable `ā ē ī ō ū / Ā Ē Ī ō Ū` + `a ↔ ā` toggle for last char before cursor
+- No persistence / no auth / runs entirely client-side (shuffled session, score at end)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Content
+Edit `src/content/chapters.ts` -> `rawChapters`. Zod-validated at build time.
+See `src/lib/schema.ts:1` for types. Example in `src/content/chapters.ts:1` (Caput 1-3).
+
+```ts
+{
+  id: "caput-1",
+  title: "Caput 1",
+  exercises: [
+    { id: "v1", type: "vocab", prompt: "het meisje", answer: "puella", direction: "nl->la" },
+    { id: "v2", type: "vocab", prompt: "puella", answer: "het meisje", direction: "la->nl", options: ["het meisje", "de jongen"] },
+    { id: "d1", type: "declension", prompt: "rosa – gen. sg.", answer: "rosae", form: "gen. sg." }
+  ]
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting Started
+```bash
+npm install
+npm run dev   # http://localhost:3000
+npm test      # vitest
+npm run build
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy (CapRover / Coolify)
+- **Dockerfile** at root uses Next.js `output: "standalone"` (multi-stage, runs on :3000)
+- **Coolify**: New Service → From Git → Build Pack: Dockerfile → Port 3000
+- **CapRover**: `captain-definition` present → Deploy via `caprover deploy` or Git
+- Env: `PORT=3000`, `HOSTNAME=0.0.0.0` already set in Dockerfile
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stack
+Next.js 16 (App Router) + TypeScript + Tailwind 4 + zod + Vitest. Single container.
