@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ChapterBrowser } from "@/components/ChapterBrowser";
 import { chapters } from "@/content/chapters";
 
 export default function Home() {
@@ -7,14 +7,14 @@ export default function Home() {
 			<header className="mx-auto max-w-3xl px-5 py-6 sm:py-8">
 				<div className="flex items-center gap-3">
 					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 font-bold text-white">
-						L
+						M
 					</div>
 					<div>
 						<h1 className="text-xl font-extrabold tracking-tight text-stone-900">
-							Latijn Trainer
+							Marixtotle
 						</h1>
 						<p className="text-sm text-stone-600">
-							Duolingo-variant voor huiswerk • Nederlands ↔ Latijn
+							Duolingo-variant voor huiswerk • Latijn • Frans • Engels • Grieks
 						</p>
 					</div>
 				</div>
@@ -23,42 +23,16 @@ export default function Home() {
 			<main className="mx-auto max-w-3xl px-5 pb-12">
 				<div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200 sm:p-8">
 					<h2 className="text-lg font-semibold text-stone-900">
-						Kies een hoofdstuk
+						Kies een taal en hoofdstuk
 					</h2>
 					<p className="mt-1 text-sm text-stone-600">
 						Alle oefeningen zijn strict: hoofdletter maakt niet uit, maar
-						macrons (ā ē ī ō ū) wel. Gebruik de macron-balk bij Latijnse
-						antwoorden.
+						diakritische tekens (ā ē ī ō ū, é è ç, ά έ) wel. Gebruik de balk
+						boven het invoerveld.
 					</p>
 
-					<div className="mt-6 grid gap-4">
-						{chapters.map((ch) => (
-							<Link
-								key={ch.id}
-								href={`/play/${ch.id}`}
-								className="group rounded-xl border border-stone-200 bg-white p-4 hover:border-sky-300 hover:bg-sky-50/50 transition"
-							>
-								<div className="flex items-start justify-between gap-4">
-									<div>
-										<div className="font-semibold text-stone-900 group-hover:text-sky-700">
-											{ch.title}
-										</div>
-										{ch.description && (
-											<div className="mt-1 text-sm text-stone-600">
-												{ch.description}
-											</div>
-										)}
-										<div className="mt-2 text-xs font-medium text-stone-500">
-											{ch.exercises.length} oefeningen • Woordenschat &
-											verbuiging
-										</div>
-									</div>
-									<div className="shrink-0 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white group-hover:bg-sky-700">
-										Start →
-									</div>
-								</div>
-							</Link>
-						))}
+					<div className="mt-6">
+						<ChapterBrowser chapters={chapters} />
 					</div>
 
 					<div className="mt-8 rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
@@ -71,8 +45,16 @@ export default function Home() {
 								src/content/chapters.ts
 							</code>{" "}
 							— voeg een nieuw object toe aan{" "}
-							<code className="font-mono">rawChapters</code>. Zie Caput 3 als
-							voorbeeld. Nieuwe hoofdstukken verschijnen automatisch.
+							<code className="font-mono">rawChapters</code>. Nieuwe
+							hoofdstukken verschijnen automatisch. Zie{" "}
+							<code className="rounded bg-amber-900/10 px-1 py-0.5 font-mono text-xs">
+								src/content/latin/
+							</code>{" "}
+							en{" "}
+							<code className="rounded bg-amber-900/10 px-1 py-0.5 font-mono text-xs">
+								src/content/french/
+							</code>{" "}
+							als voorbeeld.
 						</div>
 					</div>
 				</div>

@@ -85,12 +85,7 @@ export const rawChapter = {
 				"het bemint",
 			],
 			direction: "la->nl",
-			options: [
-				"houdt van, bemint",
-				"ontvangt, krijgt",
-				"raakt aan",
-				"begint",
-			],
+			options: ["houdt van, bemint", "ontvangt, krijgt", "raakt aan", "begint"],
 		},
 		{
 			id: "ex9",
@@ -164,12 +159,7 @@ export const rawChapter = {
 			prompt: "per + acc.",
 			answer: "door ... heen / gedurende",
 			direction: "la->nl",
-			options: [
-				"door ... heen / gedurende",
-				"naar, naar binnen",
-				"in",
-				"met",
-			],
+			options: ["door ... heen / gedurende", "naar, naar binnen", "in", "met"],
 		},
 		{
 			id: "ex18",
@@ -396,4 +386,3 @@ export const rawChapter = {
 } as const;
 
 export const chapter: Chapter = chapterSchema.parse(rawChapter);
-

@@ -3,8 +3,13 @@
 import { useMemo, useRef, useState } from "react";
 import { insertAtCursor, toggleMacronBeforeCursor } from "@/lib/macron";
 import { isExerciseCorrect, normalize } from "@/lib/matcher";
-import type { Exercise } from "@/lib/schema";
-import { needsMacronToolbar } from "@/lib/schema";
+import type { Exercise, LanguageId } from "@/lib/schema";
+import {
+	getLanguageFromDirection,
+	needsDiacriticsToolbar,
+	needsMacronToolbar,
+} from "@/lib/schema";
+import { LanguageToolbar } from "./LanguageToolbar";
 import { MacronToolbar } from "./MacronToolbar";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -21,9 +26,16 @@ type Props = {
 	onResult: (correct: boolean) => void;
 	onNext: () => void;
 	isLast: boolean;
+	language?: LanguageId;
 };
 
-export function ExerciseView({ exercise, onResult, onNext, isLast }: Props) {
+export function ExerciseView({
+	exercise,
+	onResult,
+	onNext,
+	isLast,
+	language,
+}: Props) {
 	const isMCQ = !!exercise.options && exercise.options.length > 0;
 	return isMCQ ? (
 		<MultipleChoiceExercise
@@ -31,6 +43,7 @@ export function ExerciseView({ exercise, onResult, onNext, isLast }: Props) {
 			onResult={onResult}
 			onNext={onNext}
 			isLast={isLast}
+			language={language}
 		/>
 	) : (
 		<TextInputExercise
@@ -38,6 +51,7 @@ export function ExerciseView({ exercise, onResult, onNext, isLast }: Props) {
 			onResult={onResult}
 			onNext={onNext}
 			isLast={isLast}
+			language={language}
 		/>
 	);
 }
@@ -127,11 +141,29 @@ function MultipleChoiceExercise({ exercise, onResult, onNext, isLast }: Props) {
 	);
 }
 
-function TextInputExercise({ exercise, onResult, onNext, isLast }: Props) {
+function TextInputExercise({
+	exercise,
+	onResult,
+	onNext,
+	isLast,
+	language,
+}: Props) {
 	const [value, setValue] = useState("");
 	const [submitted, setSubmitted] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const needsMacron = needsMacronToolbar(exercise);
+	const inferredLanguage =
+		language ??
+		(exercise.type === "vocab"
+			? getLanguageFromDirection(exercise.direction)
+			: undefined) ??
+		"latin";
+	const needsMacronLegacy = needsMacronToolbar(exercise);
+	const needsDiacritics = needsDiacriticsToolbar(exercise, inferredLanguage);
+	// For latin we keep classic MacronToolbar (with toggle), for others use LanguageToolbar
+	const showLanguageToolbar = needsDiacritics && inferredLanguage !== "latin";
+	const showMacronToolbar = needsMacronLegacy && inferredLanguage === "latin";
+	const effectiveLanguage: LanguageId =
+		(inferredLanguage as LanguageId) ?? "latin";
 	const correct = isExerciseCorrect(value, exercise);
 	const isAlternative =
 		submitted && correct && normalize(value) !== normalize(exercise.answer);
@@ -188,8 +220,8 @@ function TextInputExercise({ exercise, onResult, onNext, isLast }: Props) {
 					onChange={(e) => setValue(e.target.value)}
 					disabled={submitted}
 					placeholder={
-						exercise.type === "vocab" && exercise.direction === "nl->la"
-							? "Type het Latijnse woord…"
+						exercise.type === "vocab" && exercise.direction.startsWith("nl->")
+							? `Type het ${getLanguageLabel(effectiveLanguage)} woord…`
 							: exercise.type === "vocab"
 								? "Type de Nederlandse vertaling…"
 								: "Type het antwoord…"
@@ -208,11 +240,19 @@ function TextInputExercise({ exercise, onResult, onNext, isLast }: Props) {
 							: "border-stone-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20",
 					].join(" ")}
 				/>
-				{needsMacron && !submitted && (
+				{showMacronToolbar && !submitted && (
 					<MacronToolbar
 						onInsert={handleInsert}
 						onToggle={handleToggle}
 						showToggle
+					/>
+				)}
+				{showLanguageToolbar && !submitted && (
+					<LanguageToolbar
+						language={effectiveLanguage}
+						onInsert={handleInsert}
+						onToggle={handleToggle}
+						showToggle={effectiveLanguage === "latin"}
 					/>
 				)}
 				{!submitted ? (
@@ -239,12 +279,39 @@ function TextInputExercise({ exercise, onResult, onNext, isLast }: Props) {
 	);
 }
 
+function getLanguageLabel(lang: LanguageId): string {
+	switch (lang) {
+		case "latin":
+			return "Latijnse";
+		case "french":
+			return "Franse";
+		case "english":
+			return "Engelse";
+		case "greek":
+			return "Griekse";
+		default:
+			return "";
+	}
+}
+
+function formatDirection(direction: string): string {
+	const map: Record<string, string> = {
+		"nl->la": "NL → LA",
+		"la->nl": "LA → NL",
+		"nl->fr": "NL → FR",
+		"fr->nl": "FR → NL",
+		"nl->en": "NL → EN",
+		"en->nl": "EN → NL",
+		"nl->el": "NL → EL",
+		"el->nl": "EL → NL",
+	};
+	return map[direction] ?? direction.toUpperCase();
+}
+
 function ExerciseHeader({ exercise }: { exercise: Exercise }) {
 	const typeLabel =
 		exercise.type === "vocab"
-			? exercise.direction === "nl->la"
-				? "Woordenschat • NL → LA"
-				: "Woordenschat • LA → NL"
+			? `Woordenschat • ${formatDirection(exercise.direction)}`
 			: "Verbuiging / Vervoeging";
 
 	return (

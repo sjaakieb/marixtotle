@@ -122,10 +122,19 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 					onResult={handleResult}
 					onNext={handleNext}
 					isLast={index + 1 === total}
+					language={chapter.language}
 				/>
 			</div>
 			<div className="text-center text-xs text-stone-400">
-				Tip: gebruik de macron-balk voor ā ē ī ō ū bij Latijnse antwoorden.
+				{chapter.language === "french" &&
+					"Tip: gebruik de accent-balk voor é è ê ë ç bij Franse antwoorden."}
+				{chapter.language === "greek" &&
+					"Tip: gebruik de Griekse balk om letters en accenten in te voegen."}
+				{chapter.language === "latin" &&
+					"Tip: gebruik de macron-balk voor ā ē ī ō ū bij Latijnse antwoorden."}
+				{chapter.language === "english" &&
+					"Tip: type je antwoord – geen speciale tekens nodig."}
+				{!chapter.language && "Tip: gebruik de balk voor speciale tekens."}
 			</div>
 		</div>
 	);

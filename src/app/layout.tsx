@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Latijn Trainer",
-	description: "Duolingo-variant for Latin homework – Nederlands ↔ Latijn",
+	title: "Marixtotle – Taaltrainer",
+	description:
+		"Duolingo-variant voor huiswerk – Nederlands ↔ Latijn, Frans, Engels & Grieks",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

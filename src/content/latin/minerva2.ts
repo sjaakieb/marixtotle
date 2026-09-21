@@ -1,7 +1,6 @@
 import { type Chapter, chapterSchema } from "@/lib/schema";
 
-const rawChapter =
-{
+const rawChapter = {
 	id: "minerva-2",
 	title: "Caput – Nominativus en Accusativus",
 	description:
