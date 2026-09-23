@@ -332,9 +332,6 @@ function ExerciseHeader({ exercise }: { exercise: Exercise }) {
 					</div>
 				)}
 			</div>
-			{exercise.hint && (
-				<div className="text-sm text-stone-500">💡 {exercise.hint}</div>
-			)}
 		</div>
 	);
 }
@@ -386,8 +383,8 @@ function Feedback({
 					Correct antwoord: <span className="font-semibold">{answer}</span>
 				</div>
 			)}
-			{!correct && hint && (
-				<div className="mt-1 text-sm text-stone-600">Tip: {hint}</div>
+			{hint && (
+				<div className="mt-1 text-sm text-stone-600">💡 {hint}</div>
 			)}
 			<button
 				type="button"
