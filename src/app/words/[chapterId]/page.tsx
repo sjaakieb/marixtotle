@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PlayClient } from "@/components/PlayClient";
+import { WordListClient } from "@/components/WordListClient";
 import { chapters, getChapter } from "@/content/chapters";
 import { getLanguage } from "@/lib/languages";
 
@@ -8,7 +8,7 @@ export function generateStaticParams() {
 	return chapters.map((c) => ({ chapterId: c.id }));
 }
 
-export default async function PlayPage({
+export default async function WordsPage({
 	params,
 }: {
 	params: Promise<{ chapterId: string }>;
@@ -18,6 +18,7 @@ export default async function PlayPage({
 	if (!chapter) notFound();
 
 	const lang = getLanguage(chapter.language ?? "latin");
+	const vocabCount = chapter.exercises.filter((e) => e.type === "vocab").length;
 
 	return (
 		<div className="min-h-dvh bg-stone-50">
@@ -27,34 +28,34 @@ export default async function PlayPage({
 						<div className="flex items-center gap-2">
 							{lang && <span>{lang.flag}</span>}
 							<span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-								{lang?.label ?? chapter.language}
+								{lang?.label ?? chapter.language} • Woordenlijst
 							</span>
 						</div>
-						<h1 className="text-lg font-bold text-stone-900">
-							{chapter.title}
-						</h1>
+						<h1 className="text-lg font-bold text-stone-900">{chapter.title}</h1>
 						{chapter.description && (
 							<p className="text-sm text-stone-600">{chapter.description}</p>
 						)}
+						<div className="mt-1 text-xs font-medium text-stone-500">
+							{vocabCount} woorden • {chapter.exercises.length} oefeningen totaal
+						</div>
 					</div>
-					<div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-						{chapter.exercises.some((e) => e.type === "vocab") && (
-							<Link
-								href={`/words/${chapter.id}`}
-								className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
-							>
-								📋 Woordenlijst
-							</Link>
-						)}
+					<div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+						<Link
+							href={`/play/${chapter.id}`}
+							className="rounded-full bg-sky-600 px-4 py-1.5 text-center text-xs font-semibold text-white hover:bg-sky-700"
+						>
+							Oefenen →
+						</Link>
 						<Link
 							href="/"
-							className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+							className="rounded-full bg-white px-3 py-1.5 text-center text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
 						>
 							← Overzicht
 						</Link>
 					</div>
 				</div>
-				<PlayClient chapter={chapter} />
+
+				<WordListClient chapter={chapter} />
 			</div>
 		</div>
 	);
