@@ -2,7 +2,7 @@ import { type Chapter, chapterSchema } from "@/lib/schema";
 
 export const rawChapter = {
 	id: "minerva-2a",
-	title: "Minerva – Woordenlijst 2a",
+	title: "Minerva – Woorden 2A (Een geschenk voor Midas)",
 	description: "Woorden 2A Een geschenk voor Midas",
 	exercises: [
 		{

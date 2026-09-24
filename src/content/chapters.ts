@@ -5,8 +5,10 @@ import { chapter as french1 } from "./french/beginner1";
 import { chapter as greek1 } from "./greek/beginner1";
 import { chapter as latin2 } from "./latin/minerva2";
 import { chapter as latin2a } from "./latin/minerva2a";
+import { chapter as latin2b } from "./latin/minerva2b";
 
 const rawChapters = [
+	latin2b,
 	latin2a,
 	latin2,
 	french1,
