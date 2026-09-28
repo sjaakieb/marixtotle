@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { insertAtCursor, toggleMacronBeforeCursor } from "@/lib/macron";
 import { isExerciseCorrect, normalize } from "@/lib/matcher";
 import type { Exercise, LanguageId } from "@/lib/schema";
+import { playFail, playSuccess } from "@/lib/sounds";
 import {
 	getLanguageFromDirection,
 	needsDiacriticsToolbar,
@@ -75,6 +76,8 @@ function MultipleChoiceExercise({ exercise, onResult, onNext, isLast }: Props) {
 		if (selected == null || submitted) return;
 		setSubmitted(true);
 		onResult(correct);
+		if (correct) playSuccess();
+		else playFail();
 	};
 
 	const handleNext = () => {
@@ -173,6 +176,8 @@ function TextInputExercise({
 		if (submitted || value.trim() === "") return;
 		setSubmitted(true);
 		onResult(correct);
+		if (correct) playSuccess();
+		else playFail();
 	};
 
 	const handleNext = () => {
