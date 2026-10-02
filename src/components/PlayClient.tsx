@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Chapter } from "@/lib/schema";
+import { isSoundEnabled, setSoundEnabled } from "@/lib/sounds";
 import { ExerciseView } from "./ExerciseView";
 import { ProgressBar } from "./ProgressBar";
 
@@ -21,6 +22,11 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 	const [score, setScore] = useState(0);
 	const [done, setDone] = useState(false);
 	const [results, setResults] = useState<boolean[]>([]);
+	const [soundEnabled, setSoundEnabledState] = useState(true);
+
+	useEffect(() => {
+		setSoundEnabledState(isSoundEnabled());
+	}, []);
 
 	const current = order[index];
 	const total = order.length;
@@ -110,8 +116,25 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 				>
 					← Hoofdstukken
 				</Link>
-				<div className="text-sm font-medium text-stone-600">
-					{index + 1} / {total} • Score {score}
+				<div className="flex items-center gap-3">
+					<button
+						type="button"
+						onClick={() => {
+							const next = !soundEnabled;
+							setSoundEnabled(next);
+							setSoundEnabledState(next);
+						}}
+						aria-label={soundEnabled ? "Geluid uit" : "Geluid aan"}
+						title={soundEnabled ? "Geluid uit" : "Geluid aan"}
+						className="rounded-full bg-white p-1.5 text-stone-500 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-700"
+					>
+						<span aria-hidden className="text-sm leading-none">
+							{soundEnabled ? "🔊" : "🔇"}
+						</span>
+					</button>
+					<div className="text-sm font-medium text-stone-600">
+						{index + 1} / {total} • Score {score}
+					</div>
 				</div>
 			</div>
 			<ProgressBar current={index} total={total} />
