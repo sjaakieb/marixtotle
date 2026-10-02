@@ -8,8 +8,8 @@
 		"start": "next start",
 		"lint": "npx @biomejs/biome check --write .",
 		"test": "vitest run",
-		"deploy-dev": "caprover deploy -n captain-01 -a marixtotle -b develop",
-		"deploy-main": "caprover deploy -n captain-01 -a marixtotle -b main"
+		"deploy-dev": "npx -y caprover@2.4.4 deploy -n captain-01 -a marixtotle -b develop",
+		"deploy-main": "npx -y caprover@2.4.4 deploy -n captain-01 -a marixtotle -b main"
 	},
 	"dependencies": {
 		"next": "16.3.5",
@@ -23,7 +23,6 @@
 		"@types/node": "^24.13.5",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
-		"caprover": "^2.4.4",
 		"tailwindcss": "^4",
 		"typescript": "^5",
 		"vite": "^8.3.0",
