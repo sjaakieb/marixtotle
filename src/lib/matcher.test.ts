@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	canonicalDutchPronouns,
 	getAnswerCandidates,
 	isCorrect,
 	isCorrectLenient,
@@ -111,5 +112,83 @@ describe("isExerciseCorrect with alternatives & implicit alias", () => {
 		expect(getAnswerCandidates("mirus, -a, -um")).toContain("mira");
 		expect(getAnswerCandidates("mirus, -a, -um")).toContain("mirum");
 		expect(getAnswerCandidates("donum")).toEqual(["donum"]);
+	});
+});
+
+describe("Dutch je/jij leniency", () => {
+	it("accepts je for jij in Dutch answers (fr->nl)", () => {
+		expect(
+			isExerciseCorrect("Hoe heet je?", {
+				answer: "Hoe heet jij?",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+		expect(
+			isExerciseCorrect("Waar woon je?", {
+				answer: "Waar woon jij?",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+	});
+	it("accepts jij for je in Dutch answers", () => {
+		expect(
+			isExerciseCorrect("Heb jij een broer?", {
+				answer: "Heb je een broer?",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+	});
+	it("accepts mixed combinations within one sentence", () => {
+		expect(
+			isExerciseCorrect("En je, hoe oud ben je?", {
+				answer: "En jij, hoe oud ben jij?",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+		expect(
+			isExerciseCorrect("En jij, hoe oud ben je?", {
+				answer: "En jij, hoe oud ben jij?",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+	});
+	it("still accepts the exact answer", () => {
+		expect(
+			isExerciseCorrect("Hoe heet jij?", {
+				answer: "Hoe heet jij?",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+	});
+	it("still rejects wrong answers", () => {
+		expect(
+			isExerciseCorrect("Hoe oud ben je?", {
+				answer: "Hoe heet jij?",
+				direction: "fr->nl",
+			}),
+		).toBe(false);
+	});
+	it("does not apply to French answers (nl->fr)", () => {
+		expect(
+			isExerciseCorrect("jij parle", {
+				answer: "je parle",
+				direction: "nl->fr",
+			}),
+		).toBe(false);
+		expect(
+			isExerciseCorrect("je parle", {
+				answer: "je parle",
+				direction: "nl->fr",
+			}),
+		).toBe(true);
+	});
+	it("does not apply without direction (strict, backward compatible)", () => {
+		expect(isExerciseCorrect("Hoe heet je?", { answer: "Hoe heet jij?" })).toBe(
+			false,
+		);
+	});
+	it("canonicalDutchPronouns only touches whole words", () => {
+		expect(canonicalDutchPronouns(normalize("jijzelf"))).toBe("jijzelf");
+		expect(canonicalDutchPronouns(normalize("JIJ"))).toBe("je");
 	});
 });

@@ -60,8 +60,8 @@ export default function Home() {
 				</div>
 
 				<footer className="mt-6 text-center text-xs text-stone-400">
-					Geen accounts, geen opslag. Alles draait lokaal in je browser. •
-					Gebouwd voor CapRover / Coolify
+					Geen accounts. Voortgang (niveau per woord) wordt lokaal in je browser
+					bewaard. • Gebouwd voor CapRover / Coolify
 				</footer>
 			</main>
 		</div>

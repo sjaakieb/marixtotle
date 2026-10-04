@@ -4,12 +4,13 @@ import { useMemo, useRef, useState } from "react";
 import { insertAtCursor, toggleMacronBeforeCursor } from "@/lib/macron";
 import { isExerciseCorrect, normalize } from "@/lib/matcher";
 import type { Exercise, LanguageId } from "@/lib/schema";
-import { playFail, playSuccess } from "@/lib/sounds";
 import {
 	getLanguageFromDirection,
 	needsDiacriticsToolbar,
 	needsMacronToolbar,
 } from "@/lib/schema";
+import { playFail, playSuccess } from "@/lib/sounds";
+import { getSpeechLang, isSpeechSupported, speak } from "@/lib/speech";
 import { LanguageToolbar } from "./LanguageToolbar";
 import { MacronToolbar } from "./MacronToolbar";
 
@@ -28,6 +29,13 @@ type Props = {
 	onNext: () => void;
 	isLast: boolean;
 	language?: LanguageId;
+	/** e.g. "L2/5 • NL → FR • meerkeuze" — shown when quizzing via mastery engine */
+	levelBadge?: string;
+	/** when set, prompt is an audio question: play this text via speech synthesis */
+	audioText?: string;
+	audioLang?: string;
+	/** declension L5 hides the hint for a bare recall test */
+	hideHint?: boolean;
 };
 
 export function ExerciseView({
@@ -36,6 +44,10 @@ export function ExerciseView({
 	onNext,
 	isLast,
 	language,
+	levelBadge,
+	audioText,
+	audioLang,
+	hideHint,
 }: Props) {
 	const isMCQ = !!exercise.options && exercise.options.length > 0;
 	return isMCQ ? (
@@ -45,6 +57,10 @@ export function ExerciseView({
 			onNext={onNext}
 			isLast={isLast}
 			language={language}
+			levelBadge={levelBadge}
+			audioText={audioText}
+			audioLang={audioLang}
+			hideHint={hideHint}
 		/>
 	) : (
 		<TextInputExercise
@@ -53,11 +69,24 @@ export function ExerciseView({
 			onNext={onNext}
 			isLast={isLast}
 			language={language}
+			levelBadge={levelBadge}
+			audioText={audioText}
+			audioLang={audioLang}
+			hideHint={hideHint}
 		/>
 	);
 }
 
-function MultipleChoiceExercise({ exercise, onResult, onNext, isLast }: Props) {
+function MultipleChoiceExercise({
+	exercise,
+	onResult,
+	onNext,
+	isLast,
+	levelBadge,
+	audioText,
+	audioLang,
+	hideHint,
+}: Props) {
 	const [selected, setSelected] = useState<string | null>(null);
 	const [submitted, setSubmitted] = useState(false);
 	const shuffledOptions = useMemo(
@@ -88,7 +117,12 @@ function MultipleChoiceExercise({ exercise, onResult, onNext, isLast }: Props) {
 
 	return (
 		<div className="space-y-4">
-			<ExerciseHeader exercise={exercise} />
+			<ExerciseHeader
+				exercise={exercise}
+				levelBadge={levelBadge}
+				audioText={audioText}
+				audioLang={audioLang}
+			/>
 			<div className="grid gap-2">
 				{shuffledOptions.map((opt) => {
 					const isSelected = selected === opt;
@@ -133,7 +167,7 @@ function MultipleChoiceExercise({ exercise, onResult, onNext, isLast }: Props) {
 				<Feedback
 					correct={correct}
 					answer={exercise.answer}
-					hint={exercise.hint}
+					hint={hideHint ? undefined : exercise.hint}
 					isLast={isLast}
 					onNext={handleNext}
 					isAlternative={isAlternative}
@@ -150,6 +184,10 @@ function TextInputExercise({
 	onNext,
 	isLast,
 	language,
+	levelBadge,
+	audioText,
+	audioLang,
+	hideHint,
 }: Props) {
 	const [value, setValue] = useState("");
 	const [submitted, setSubmitted] = useState(false);
@@ -217,7 +255,12 @@ function TextInputExercise({
 
 	return (
 		<div className="space-y-4">
-			<ExerciseHeader exercise={exercise} />
+			<ExerciseHeader
+				exercise={exercise}
+				levelBadge={levelBadge}
+				audioText={audioText}
+				audioLang={audioLang}
+			/>
 			<form onSubmit={handleSubmit} className="space-y-3">
 				<input
 					ref={inputRef}
@@ -272,7 +315,7 @@ function TextInputExercise({
 					<Feedback
 						correct={correct}
 						answer={exercise.answer}
-						hint={exercise.hint}
+						hint={hideHint ? undefined : exercise.hint}
 						isLast={isLast}
 						onNext={handleNext}
 						isAlternative={isAlternative}
@@ -313,21 +356,55 @@ function formatDirection(direction: string): string {
 	return map[direction] ?? direction.toUpperCase();
 }
 
-function ExerciseHeader({ exercise }: { exercise: Exercise }) {
+function ExerciseHeader({
+	exercise,
+	levelBadge,
+	audioText,
+	audioLang,
+}: {
+	exercise: Exercise;
+	levelBadge?: string;
+	audioText?: string;
+	audioLang?: string;
+}) {
 	const typeLabel =
 		exercise.type === "vocab"
 			? `Woordenschat • ${formatDirection(exercise.direction)}`
 			: "Verbuiging / Vervoeging";
 
+	const lang: LanguageId =
+		exercise.type === "vocab"
+			? ((getLanguageFromDirection(exercise.direction) ??
+					"latin") as LanguageId)
+			: "latin";
+	const speechLang = audioLang ?? getSpeechLang(lang);
+	const canSpeak = !!audioText && isSpeechSupported();
+
 	return (
 		<div className="space-y-2">
-			<div className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-				{typeLabel}
+			<div className="flex flex-wrap items-center gap-2">
+				<div className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+					{typeLabel}
+				</div>
+				{levelBadge && (
+					<span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-700 ring-1 ring-violet-200">
+						{levelBadge}
+					</span>
+				)}
 			</div>
 			<div className="rounded-xl bg-white p-4 ring-1 ring-stone-200">
 				<div className="text-lg font-semibold text-stone-900">
 					{exercise.prompt}
 				</div>
+				{canSpeak && (
+					<button
+						type="button"
+						onClick={() => speak(audioText as string, speechLang)}
+						className="mt-3 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+					>
+						<span aria-hidden>🔊</span> Beluister
+					</button>
+				)}
 				{exercise.type === "declension" && exercise.lemma && (
 					<div className="mt-1 text-sm text-stone-600">{exercise.lemma}</div>
 				)}
@@ -388,9 +465,7 @@ function Feedback({
 					Correct antwoord: <span className="font-semibold">{answer}</span>
 				</div>
 			)}
-			{hint && (
-				<div className="mt-1 text-sm text-stone-600">💡 {hint}</div>
-			)}
+			{hint && <div className="mt-1 text-sm text-stone-600">💡 {hint}</div>}
 			<button
 				type="button"
 				onClick={onNext}

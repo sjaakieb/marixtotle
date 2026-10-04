@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { WordListClient } from "@/components/WordListClient";
 import { chapters, getChapter } from "@/content/chapters";
 import { getLanguage } from "@/lib/languages";
+import { getMasteryItems } from "@/lib/words";
 
 export function generateStaticParams() {
 	return chapters.map((c) => ({ chapterId: c.id }));
@@ -18,7 +19,9 @@ export default async function WordsPage({
 	if (!chapter) notFound();
 
 	const lang = getLanguage(chapter.language ?? "latin");
-	const vocabCount = chapter.exercises.filter((e) => e.type === "vocab").length;
+	const vocabCount = getMasteryItems(chapter).filter(
+		(i) => i.kind === "vocab",
+	).length;
 
 	return (
 		<div className="min-h-dvh bg-stone-50">
@@ -31,12 +34,14 @@ export default async function WordsPage({
 								{lang?.label ?? chapter.language} • Woordenlijst
 							</span>
 						</div>
-						<h1 className="text-lg font-bold text-stone-900">{chapter.title}</h1>
+						<h1 className="text-lg font-bold text-stone-900">
+							{chapter.title}
+						</h1>
 						{chapter.description && (
 							<p className="text-sm text-stone-600">{chapter.description}</p>
 						)}
 						<div className="mt-1 text-xs font-medium text-stone-500">
-							{vocabCount} woorden • {chapter.exercises.length} oefeningen totaal
+							{vocabCount} unieke woorden
 						</div>
 					</div>
 					<div className="flex shrink-0 flex-col gap-2 sm:flex-row">

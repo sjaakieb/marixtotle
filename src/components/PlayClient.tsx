@@ -1,23 +1,84 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { Chapter } from "@/lib/schema";
+import { useEffect, useMemo, useState } from "react";
+import {
+	applyResult,
+	averageLevel,
+	buildSession,
+	type GeneratedQuestion,
+	sessionGrade,
+} from "@/lib/levels";
+import {
+	type ChapterProgress,
+	getChapterStats,
+	loadChapterProgress,
+	resetChapterProgress,
+	saveItemLevel,
+} from "@/lib/progress";
+import type { Chapter, Exercise } from "@/lib/schema";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/sounds";
+import { getSpeechLang } from "@/lib/speech";
+import { getMasteryItems } from "@/lib/words";
 import { ExerciseView } from "./ExerciseView";
 import { ProgressBar } from "./ProgressBar";
 
-function shuffle<T>(arr: T[]): T[] {
-	const a = [...arr];
-	for (let i = a.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[a[i], a[j]] = [a[j], a[i]];
+const SESSION_SIZE = 10;
+
+function questionToExercise(
+	q: GeneratedQuestion,
+	chapter: Chapter,
+): { exercise: Exercise; audioLang?: string } {
+	if (q.kind === "vocab") {
+		const lang = chapter.language ?? "latin";
+		const code =
+			lang === "french"
+				? "fr"
+				: lang === "english"
+					? "en"
+					: lang === "greek"
+						? "el"
+						: "la";
+		// Direction drives toolbars/placeholders: typing the foreign word => nl->xx.
+		const isMcqForeignFirst = q.level === 1;
+		const isTypeNl = q.level === 3;
+		const direction =
+			isMcqForeignFirst || isTypeNl
+				? (`${code}->nl` as const)
+				: (`nl->${code}` as const);
+		return {
+			exercise: {
+				id: `${q.itemKey}-L${q.level}`,
+				type: "vocab",
+				prompt: q.prompt,
+				answer: q.answer,
+				alternatives: q.alternatives.length > 0 ? q.alternatives : undefined,
+				direction,
+				hint: q.showHint ? q.hint : undefined,
+				options: q.options,
+			},
+			audioLang: q.audioText ? getSpeechLang(lang) : undefined,
+		};
 	}
-	return a;
+	return {
+		exercise: {
+			id: q.itemKey,
+			type: "declension",
+			prompt: q.prompt,
+			lemma: q.lemma,
+			form: q.form,
+			answer: q.answer,
+			alternatives: q.alternatives.length > 0 ? q.alternatives : undefined,
+			hint: q.showHint ? q.hint : undefined,
+			options: q.options,
+		},
+	};
 }
 
 export function PlayClient({ chapter }: { chapter: Chapter }) {
-	const [order] = useState(() => shuffle(chapter.exercises));
+	const items = useMemo(() => getMasteryItems(chapter), [chapter]);
+	const [levels, setLevels] = useState<ChapterProgress>({});
+	const [loaded, setLoaded] = useState(false);
 	const [index, setIndex] = useState(0);
 	const [score, setScore] = useState(0);
 	const [done, setDone] = useState(false);
@@ -26,12 +87,52 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 
 	useEffect(() => {
 		setSoundEnabledState(isSoundEnabled());
-	}, []);
+		setLevels(loadChapterProgress(chapter.id));
+		setLoaded(true);
+	}, [chapter.id]);
 
-	const current = order[index];
-	const total = order.length;
+	// Snapshot levels at session start so the 10 questions are fixed.
+	const [sessionStartLevels, setSessionStartLevels] = useState<ChapterProgress>(
+		{},
+	);
+	const [session, setSession] = useState<GeneratedQuestion[]>([]);
+	const resetSessionState = (start: ChapterProgress) => {
+		setSessionStartLevels(start);
+		setSession(buildSession(items, start, SESSION_SIZE));
+		setIndex(0);
+		setScore(0);
+		setDone(false);
+		setResults([]);
+	};
+	useEffect(() => {
+		if (!loaded) return;
+		const start = loadChapterProgress(chapter.id);
+		setSessionStartLevels(start);
+		setSession(buildSession(items, start, SESSION_SIZE));
+		setIndex(0);
+		setScore(0);
+		setDone(false);
+		setResults([]);
+	}, [loaded, chapter.id, items]);
+
+	const current = session[index];
+	const total = session.length;
+	const liveStats = getChapterStats(items, levels);
+	const startPct =
+		items.length === 0
+			? 0
+			: Math.round(
+					(Object.values(sessionStartLevels).reduce((s, v) => s + v, 0) /
+						(items.length * 5)) *
+						100,
+				);
 
 	const handleResult = (correct: boolean) => {
+		if (!current) return;
+		const prev = levels[current.itemKey] ?? 0;
+		const next = applyResult(prev, correct);
+		const updated = saveItemLevel(chapter.id, current.itemKey, next);
+		setLevels(updated);
 		setResults((r) => [...r, correct]);
 		if (correct) setScore((s) => s + 1);
 	};
@@ -45,20 +146,57 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 	};
 
 	const handleRestart = () => {
-		// simple reload to re-shuffle; no persistence needed per requirements
-		window.location.reload();
+		const fresh = loadChapterProgress(chapter.id);
+		setLevels(fresh);
+		resetSessionState(fresh);
 	};
 
+	const handleReset = () => {
+		if (
+			!window.confirm(
+				"Voortgang voor dit hoofdstuk wissen? Alle niveaus terug naar 0.",
+			)
+		)
+			return;
+		resetChapterProgress(chapter.id);
+		setLevels({});
+		resetSessionState({});
+	};
+
+	if (!loaded || session.length === 0) {
+		if (loaded && items.length === 0) {
+			return (
+				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
+					<div className="font-semibold text-stone-700">
+						Geen oefenitems in dit hoofdstuk.
+					</div>
+					<Link
+						href="/"
+						className="mt-4 inline-block text-sm font-medium text-sky-600 hover:underline"
+					>
+						← Terug naar overzicht
+					</Link>
+				</div>
+			);
+		}
+		return (
+			<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center text-sm text-stone-500 ring-1 ring-stone-200">
+				Sessie laden…
+			</div>
+		);
+	}
+
 	if (done) {
-		const pct = Math.round((score / total) * 100);
+		const grade = sessionGrade(score, total);
+		const avgLevel = averageLevel(session);
 		return (
 			<div className="mx-auto max-w-xl space-y-6">
 				<div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
 					<div className="text-4xl">
-						{pct >= 80 ? "🎉" : pct >= 50 ? "💪" : "📚"}
+						{grade >= 8 ? "🎉" : grade >= 5.5 ? "💪" : "📚"}
 					</div>
 					<h2 className="mt-3 text-2xl font-bold text-stone-900">
-						Hoofdstuk afgerond!
+						Sessie afgerond!
 					</h2>
 					<p className="mt-1 text-stone-600">{chapter.title}</p>
 					<div className="mt-6">
@@ -66,10 +204,25 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 							{score} / {total}
 						</div>
 						<div className="mt-1 text-sm font-medium text-stone-500">
-							{pct}% correct
+							Cijfer:{" "}
+							<span className="font-bold text-stone-800">
+								{grade.toFixed(1)}
+							</span>
+							{" • "}Gem. niveau:{" "}
+							<span className="font-bold text-stone-800">
+								{avgLevel.toFixed(1)}
+							</span>
 						</div>
 						<div className="mt-4">
 							<ProgressBar current={score} total={total} />
+						</div>
+						<div className="mt-4 rounded-xl bg-violet-50 p-3 text-sm text-violet-800 ring-1 ring-violet-200">
+							Beheersing hoofdstuk:{" "}
+							<span className="font-bold">
+								{startPct}% → {liveStats.pct}%
+							</span>
+							{" • "}
+							{liveStats.mastered}/{liveStats.total} op niveau 5
 						</div>
 					</div>
 					<div className="mt-6 grid grid-cols-10 gap-1.5">
@@ -91,7 +244,7 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 							onClick={handleRestart}
 							className="rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700"
 						>
-							Opnieuw spelen
+							Volgende 10 →
 						</button>
 						<Link
 							href="/"
@@ -100,12 +253,20 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 							Ander hoofdstuk
 						</Link>
 					</div>
+					<button
+						type="button"
+						onClick={handleReset}
+						className="mt-3 text-xs font-medium text-stone-400 hover:text-red-600 hover:underline"
+					>
+						Voortgang wissen
+					</button>
 				</div>
 			</div>
 		);
 	}
 
 	if (!current) return null;
+	const { exercise, audioLang } = questionToExercise(current, chapter);
 
 	return (
 		<div className="mx-auto max-w-xl space-y-4">
@@ -138,14 +299,30 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 				</div>
 			</div>
 			<ProgressBar current={index} total={total} />
+			<div className="flex items-center justify-between text-xs font-medium text-stone-500">
+				<span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 ring-1 ring-violet-200">
+					Beheersing: {liveStats.pct}%
+				</span>
+				<button
+					type="button"
+					onClick={handleReset}
+					className="hover:text-red-600 hover:underline"
+				>
+					Reset voortgang
+				</button>
+			</div>
 			<div className="rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-stone-200">
 				<ExerciseView
-					key={current.id}
-					exercise={current}
+					key={`${current.itemKey}-L${current.level}-${index}`}
+					exercise={exercise}
 					onResult={handleResult}
 					onNext={handleNext}
 					isLast={index + 1 === total}
 					language={chapter.language}
+					levelBadge={current.badge}
+					audioText={current.audioText}
+					audioLang={audioLang}
+					hideHint={!current.showHint}
 				/>
 			</div>
 			<div className="text-center text-xs text-stone-400">

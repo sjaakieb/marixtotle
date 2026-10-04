@@ -45,12 +45,34 @@ export function getAnswerCandidates(
 
 export function isExerciseCorrect(
 	userInput: string,
-	exercise: { answer: string; alternatives?: string[] },
+	exercise: { answer: string; alternatives?: string[]; direction?: string },
 ): boolean {
 	const normInput = normalize(userInput);
-	return getAnswerCandidates(exercise.answer, exercise.alternatives).some(
-		(c) => normalize(c) === normInput,
+	const candidates = getAnswerCandidates(
+		exercise.answer,
+		exercise.alternatives,
 	);
+	if (candidates.some((c) => normalize(c) === normInput)) return true;
+	// Dutch leniency: "je" and "jij" are interchangeable ("Hoe heet je?"
+	// counts for "Hoe heet jij?"). Only when the answer is Dutch
+	// (direction xx->nl), so French "je parle" never matches "jij parle".
+	if (exercise.direction?.endsWith("->nl")) {
+		const canonInput = canonicalDutchPronouns(normInput);
+		return candidates.some(
+			(c) => canonicalDutchPronouns(normalize(c)) === canonInput,
+		);
+	}
+	return false;
+}
+
+/**
+ * Canonicalize Dutch informal pronouns: whole-word "jij" -> "je".
+ * Applied to both user input and expected answers, so every
+ * je/jij combination matches ("En je, hoe oud ben je?" counts for
+ * "En jij, hoe oud ben jij?"). Input must already be normalized.
+ */
+export function canonicalDutchPronouns(normalized: string): string {
+	return normalized.replace(/\bjij\b/g, "je");
 }
 
 // For potential future lenient mode (not used in strict MVP)

@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LANGUAGES, type LanguageId } from "@/lib/languages";
+import {
+	type AllProgress,
+	getChapterStats,
+	loadAllProgress,
+} from "@/lib/progress";
 import type { Chapter } from "@/lib/schema";
+import { getMasteryItems } from "@/lib/words";
 
 type Props = {
 	chapters: Chapter[];
@@ -79,6 +85,24 @@ function LanguageTab({
 
 export function ChapterBrowser({ chapters }: Props) {
 	const [selected, setSelected] = useState<LanguageId | "all">("all");
+	const [progress, setProgress] = useState<AllProgress>({});
+
+	useEffect(() => {
+		const refresh = () => {
+			try {
+				setProgress(loadAllProgress());
+			} catch {
+				// private mode — no progress shown
+			}
+		};
+		refresh();
+		window.addEventListener("storage", refresh);
+		window.addEventListener("focus", refresh);
+		return () => {
+			window.removeEventListener("storage", refresh);
+			window.removeEventListener("focus", refresh);
+		};
+	}, []);
 
 	const filtered =
 		selected === "all"
@@ -159,7 +183,11 @@ export function ChapterBrowser({ chapters }: Props) {
 								</div>
 								<div className="grid gap-4">
 									{langChapters.map((ch) => (
-										<ChapterCard key={ch.id} chapter={ch} />
+										<ChapterCard
+											key={ch.id}
+											chapter={ch}
+											progress={progress[ch.id]}
+										/>
 									))}
 								</div>
 							</div>
@@ -169,7 +197,7 @@ export function ChapterBrowser({ chapters }: Props) {
 			) : (
 				<div className="grid gap-4">
 					{filtered.map((ch) => (
-						<ChapterCard key={ch.id} chapter={ch} />
+						<ChapterCard key={ch.id} chapter={ch} progress={progress[ch.id]} />
 					))}
 					{filtered.length === 0 && (
 						<div className="rounded-xl bg-white p-6 text-center text-sm text-stone-500 ring-1 ring-stone-200">
@@ -182,7 +210,13 @@ export function ChapterBrowser({ chapters }: Props) {
 	);
 }
 
-function ChapterCard({ chapter }: { chapter: Chapter }) {
+function ChapterCard({
+	chapter,
+	progress,
+}: {
+	chapter: Chapter;
+	progress?: Record<string, number>;
+}) {
 	const meta = languageMeta[chapter.language ?? "latin"];
 	const hoverColor =
 		chapter.language === "french"
@@ -202,8 +236,11 @@ function ChapterCard({ chapter }: { chapter: Chapter }) {
 					? "bg-violet-600 hover:bg-violet-700"
 					: "bg-sky-600 hover:bg-sky-700";
 
-	const vocabCount = chapter.exercises.filter((e) => e.type === "vocab").length;
+	const items = getMasteryItems(chapter);
+	const vocabCount = items.filter((i) => i.kind === "vocab").length;
 	const hasVocab = vocabCount > 0;
+	const stats = getChapterStats(items, progress ?? {});
+	const showMastery = stats.sum > 0;
 
 	return (
 		<div
@@ -225,6 +262,26 @@ function ChapterCard({ chapter }: { chapter: Chapter }) {
 					<div className="mt-2 text-xs font-medium text-stone-500">
 						{chapter.exercises.length} oefeningen • {meta.description}
 						{hasVocab && ` • ${vocabCount} woorden`}
+					</div>
+					<div className="mt-2">
+						<div className="flex items-center justify-between text-[11px] font-semibold">
+							<span
+								className={showMastery ? "text-violet-700" : "text-stone-400"}
+							>
+								{showMastery ? `Beheersing ${stats.pct}%` : "Nog niet geoefend"}
+							</span>
+							{showMastery && (
+								<span className="text-stone-400">
+									{stats.mastered}/{stats.total} op L5
+								</span>
+							)}
+						</div>
+						<div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+							<div
+								className="h-full rounded-full bg-violet-500 transition-all"
+								style={{ width: `${stats.pct}%` }}
+							/>
+						</div>
 					</div>
 				</div>
 				<div className="flex shrink-0 flex-col items-end gap-2">

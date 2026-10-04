@@ -1,50 +1,40 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { type ChapterProgress, loadChapterProgress } from "@/lib/progress";
 import type { Chapter, LanguageId } from "@/lib/schema";
+import { getSpeechLang, isSpeechSupported, speak } from "@/lib/speech";
+import { getMasteryItems, type VocabItem } from "@/lib/words";
 
 type WordPair = {
+	key: string;
 	nl: string;
 	foreign: string;
 	hint?: string;
 	alternatives?: string[];
-	direction: string;
-	prompt: string;
-	answer: string;
-	id: string;
 };
 
+/**
+ * Same canonical items as the quiz: parenthetical hints stripped
+ * ("οὐ (voor medeklinker)" → "οὐ") and both directions merged,
+ * so each word appears exactly once.
+ */
 function getWordPairs(chapter: Chapter): WordPair[] {
-	const pairs: WordPair[] = [];
-	for (const ex of chapter.exercises) {
-		if (ex.type !== "vocab") continue;
-		const isNlToForeign = ex.direction.startsWith("nl->");
-		const nl = isNlToForeign ? ex.prompt : ex.answer;
-		const foreign = isNlToForeign ? ex.answer : ex.prompt;
-		pairs.push({
-			nl,
-			foreign,
-			hint: ex.hint,
-			alternatives: ex.alternatives,
-			direction: ex.direction,
-			prompt: ex.prompt,
-			answer: ex.answer,
-			id: ex.id,
-		});
-	}
-	return pairs;
+	return getMasteryItems(chapter)
+		.filter((it): it is VocabItem => it.kind === "vocab")
+		.map((it) => ({
+			key: it.key,
+			nl: it.nl,
+			foreign: it.foreign,
+			hint: it.hint,
+			alternatives: [...it.nlAlternatives, ...it.foreignAlternatives],
+		}));
 }
 
-function dedupePairs(pairs: WordPair[]): WordPair[] {
-	const seen = new Map<string, WordPair>();
-	for (const p of pairs) {
-		const key = `${p.nl.toLowerCase().trim()}::${p.foreign.toLowerCase().trim()}`;
-		if (!seen.has(key)) seen.set(key, p);
-	}
-	return [...seen.values()];
-}
-
-const languageHeaders: Record<LanguageId, { foreignLabel: string; foreignShort: string }> = {
+const languageHeaders: Record<
+	LanguageId,
+	{ foreignLabel: string; foreignShort: string }
+> = {
 	latin: { foreignLabel: "Latijn", foreignShort: "LA" },
 	french: { foreignLabel: "Frans", foreignShort: "FR" },
 	english: { foreignLabel: "Engels", foreignShort: "EN" },
@@ -55,22 +45,45 @@ type Props = {
 	chapter: Chapter;
 };
 
+function SpeakButton({ text, lang }: { text: string; lang: string }) {
+	return (
+		<button
+			type="button"
+			onClick={() => speak(text, lang)}
+			aria-label={`Uitspraak van “${text}” beluisteren`}
+			title="Uitspraak beluisteren"
+			className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-sm text-stone-400 ring-1 ring-transparent transition hover:bg-violet-50 hover:text-violet-700 hover:ring-violet-200 active:scale-95"
+		>
+			<span aria-hidden>🔊</span>
+		</button>
+	);
+}
+
 export function WordListClient({ chapter }: Props) {
 	const languageId = (chapter.language ?? "latin") as LanguageId;
 	const header = languageHeaders[languageId] ?? languageHeaders.latin;
 
 	const allPairs = useMemo(() => getWordPairs(chapter), [chapter]);
-	const uniquePairs = useMemo(() => dedupePairs(allPairs), [allPairs]);
 
-	const [dedupe, setDedupe] = useState(true);
 	const [query, setQuery] = useState("");
 	const [sortAsc, setSortAsc] = useState(true);
+	const [levels, setLevels] = useState<ChapterProgress>({});
+	const [speechOK, setSpeechOK] = useState(false);
 
-	const base = dedupe ? uniquePairs : allPairs;
+	useEffect(() => {
+		try {
+			setLevels(loadChapterProgress(chapter.id));
+		} catch {}
+		setSpeechOK(isSpeechSupported());
+	}, [chapter.id]);
+
+	const audioLang = getSpeechLang(languageId);
+
+	const levelOf = (key: string): number => levels[key] ?? 0;
 
 	const filtered = useMemo(() => {
 		const q = query.trim().toLowerCase();
-		let list = [...base];
+		let list = [...allPairs];
 		if (q) {
 			list = list.filter(
 				(p) =>
@@ -83,10 +96,9 @@ export function WordListClient({ chapter }: Props) {
 			sortAsc ? a.nl.localeCompare(b.nl, "nl") : b.nl.localeCompare(a.nl, "nl"),
 		);
 		return list;
-	}, [base, query, sortAsc]);
+	}, [allPairs, query, sortAsc]);
 
 	const total = allPairs.length;
-	const uniqueCount = uniquePairs.length;
 	const showing = filtered.length;
 
 	const hasDeclension = chapter.exercises.some((e) => e.type === "declension");
@@ -112,28 +124,10 @@ export function WordListClient({ chapter }: Props) {
 			<div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 sm:p-5">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex items-center gap-2 text-xs font-medium text-stone-600">
-						<span className="rounded-full bg-stone-100 px-2.5 py-1">
-							{total} oefeningen
+						<span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700 ring-1 ring-sky-200">
+							{total} unieke woorden
 						</span>
-						{dedupe ? (
-							<span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700 ring-1 ring-sky-200">
-								{uniqueCount} unieke woorden
-							</span>
-						) : (
-							<span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-800 ring-1 ring-amber-200">
-								{uniqueCount} uniek • toont alle {total}
-							</span>
-						)}
 					</div>
-					<label className="flex items-center gap-2 text-sm font-medium text-stone-700">
-						<input
-							type="checkbox"
-							checked={dedupe}
-							onChange={(e) => setDedupe(e.target.checked)}
-							className="h-4 w-4 rounded border-stone-300 text-sky-600 focus:ring-sky-500"
-						/>
-						Alleen unieke tonen
-					</label>
 				</div>
 
 				<div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -160,7 +154,7 @@ export function WordListClient({ chapter }: Props) {
 				</div>
 				{query && (
 					<div className="mt-3 text-xs text-stone-500">
-						{showing} van {dedupe ? uniqueCount : total} resultaten voor “{query}”
+						{showing} van {total} resultaten voor “{query}”
 						{showing === 0 && " — probeer een andere zoekterm"}
 					</div>
 				)}
@@ -174,30 +168,61 @@ export function WordListClient({ chapter }: Props) {
 							<th className="px-4 py-3 w-12">#</th>
 							<th className="px-4 py-3">Nederlands</th>
 							<th className="px-4 py-3">{header.foreignLabel}</th>
+							<th className="px-4 py-3 w-24">Niveau</th>
 							<th className="px-4 py-3 w-1/4">Hint / info</th>
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-stone-100">
 						{filtered.map((pair, i) => (
-							<tr key={`${pair.id}-${i}`} className="hover:bg-stone-50/70">
-								<td className="px-4 py-3 text-xs font-medium text-stone-400">{i + 1}</td>
-								<td className="px-4 py-3 font-medium text-stone-900">{pair.nl}</td>
-								<td className="px-4 py-3 font-medium text-sky-700">{pair.foreign}</td>
+							<tr key={pair.key} className="hover:bg-stone-50/70">
+								<td className="px-4 py-3 text-xs font-medium text-stone-400">
+									{i + 1}
+								</td>
+								<td className="px-4 py-3 font-medium text-stone-900">
+									{pair.nl}
+								</td>
+								<td className="px-4 py-3 font-medium text-sky-700">
+									{pair.foreign}
+									{speechOK && (
+										<SpeakButton text={pair.foreign} lang={audioLang} />
+									)}
+								</td>
+								<td className="px-4 py-3">
+									<span
+										className={[
+											"inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ring-1",
+											levelOf(pair.key) >= 5
+												? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+												: levelOf(pair.key) > 0
+													? "bg-violet-50 text-violet-700 ring-violet-200"
+													: "bg-stone-100 text-stone-400 ring-stone-200",
+										].join(" ")}
+										title={`Niveau ${levelOf(pair.key)}/5`}
+									>
+										L{levelOf(pair.key)}/5
+									</span>
+								</td>
 								<td className="px-4 py-3 text-stone-600">
-									{pair.hint && <span className="text-xs italic">{pair.hint}</span>}
+									{pair.hint && (
+										<span className="text-xs italic">{pair.hint}</span>
+									)}
 									{pair.alternatives && pair.alternatives.length > 0 && (
 										<div className="mt-1 text-xs text-stone-500">
 											ook: {pair.alternatives.join(", ")}
 										</div>
 									)}
-									{!pair.hint && !pair.alternatives && <span className="text-stone-300">—</span>}
+									{!pair.hint && !pair.alternatives && (
+										<span className="text-stone-300">—</span>
+									)}
 								</td>
 							</tr>
 						))}
 					</tbody>
 				</table>
 				{filtered.length === 0 && (
-					<div className="p-8 text-center text-sm text-stone-500">Geen woorden gevonden.</div>
+					<div className="p-8 text-center text-sm text-stone-500">
+						Geen woorden gevonden.
+					</div>
 				)}
 			</div>
 
@@ -205,33 +230,46 @@ export function WordListClient({ chapter }: Props) {
 			<div className="grid gap-3 sm:hidden">
 				{filtered.map((pair, i) => (
 					<div
-						key={`${pair.id}-${i}-m`}
+						key={pair.key}
 						className="rounded-xl bg-white p-4 ring-1 ring-stone-200"
 					>
 						<div className="flex items-start justify-between gap-3">
 							<div className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-								#{i + 1} • {pair.direction.toUpperCase()}
+								#{i + 1} • NL ↔ {header.foreignShort}
 							</div>
+							<span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-500">
+								L{levelOf(pair.key)}/5
+							</span>
 						</div>
 						<div className="mt-2 grid grid-cols-2 gap-3">
 							<div>
 								<div className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
 									Nederlands
 								</div>
-								<div className="mt-1 text-sm font-semibold text-stone-900">{pair.nl}</div>
+								<div className="mt-1 text-sm font-semibold text-stone-900">
+									{pair.nl}
+								</div>
 							</div>
 							<div>
 								<div className="text-[11px] font-semibold uppercase tracking-wide text-sky-600">
 									{header.foreignLabel}
 								</div>
-								<div className="mt-1 text-sm font-semibold text-sky-700">{pair.foreign}</div>
+								<div className="mt-1 text-sm font-semibold text-sky-700">
+									{pair.foreign}
+									{speechOK && (
+										<SpeakButton text={pair.foreign} lang={audioLang} />
+									)}
+								</div>
 							</div>
 						</div>
-						{(pair.hint || (pair.alternatives && pair.alternatives.length > 0)) && (
+						{(pair.hint ||
+							(pair.alternatives && pair.alternatives.length > 0)) && (
 							<div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600 ring-1 ring-stone-100">
 								{pair.hint && <div>💡 {pair.hint}</div>}
 								{pair.alternatives && pair.alternatives.length > 0 && (
-									<div className={pair.hint ? "mt-1" : ""}>ook: {pair.alternatives.join(", ")}</div>
+									<div className={pair.hint ? "mt-1" : ""}>
+										ook: {pair.alternatives.join(", ")}
+									</div>
 								)}
 							</div>
 						)}
@@ -246,7 +284,9 @@ export function WordListClient({ chapter }: Props) {
 
 			{hasDeclension && (
 				<div className="rounded-xl bg-amber-50 p-4 text-xs text-amber-800 ring-1 ring-amber-200">
-					ℹ️ Dit hoofdstuk bevat naast woordenschat ook {chapter.exercises.filter((e) => e.type === "declension").length} verbuiging/vervoeging oefeningen — die staan niet in deze lijst.
+					ℹ️ Dit hoofdstuk bevat naast woordenschat ook{" "}
+					{chapter.exercises.filter((e) => e.type === "declension").length}{" "}
+					verbuiging/vervoeging oefeningen — die staan niet in deze lijst.
 				</div>
 			)}
 		</div>
