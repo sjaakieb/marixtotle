@@ -26,9 +26,9 @@ export default function Home() {
 						Kies een taal en hoofdstuk
 					</h2>
 					<p className="mt-1 text-sm text-stone-600">
-						Alle oefeningen zijn strict: hoofdletter maakt niet uit, maar
-						diakritische tekens (ā ē ī ō ū, é è ç, ά έ) wel. Gebruik de balk
-						boven het invoerveld.
+						Hoofdletters maken niet uit en een enkele tikfout wordt vergeven
+						(maar wel gemeld) — ook een ontbrekend accent. Gebruik de balk boven
+						het invoerveld voor speciale tekens.
 					</p>
 
 					<div className="mt-6">

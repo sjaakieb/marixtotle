@@ -6,6 +6,7 @@ import { LANGUAGES, type LanguageId } from "@/lib/languages";
 import {
 	type AllProgress,
 	getChapterStats,
+	isChapterComplete,
 	loadAllProgress,
 } from "@/lib/progress";
 import type { Chapter } from "@/lib/schema";
@@ -241,6 +242,7 @@ function ChapterCard({
 	const hasVocab = vocabCount > 0;
 	const stats = getChapterStats(items, progress ?? {});
 	const showMastery = stats.sum > 0;
+	const complete = isChapterComplete(items, progress ?? {});
 
 	return (
 		<div
@@ -285,12 +287,22 @@ function ChapterCard({
 					</div>
 				</div>
 				<div className="flex shrink-0 flex-col items-end gap-2">
-					<Link
-						href={`/play/${chapter.id}`}
-						className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white ${badgeColor}`}
-					>
-						Oefenen →
-					</Link>
+					{complete ? (
+						<Link
+							href={`/test/${chapter.id}`}
+							className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+							title="Hoofdstuk beheerst — toets jezelf met 10 vragen op niveau 3–5"
+						>
+							✓ Toetsen →
+						</Link>
+					) : (
+						<Link
+							href={`/play/${chapter.id}`}
+							className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white ${badgeColor}`}
+						>
+							Oefenen →
+						</Link>
+					)}
 					{hasVocab && (
 						<Link
 							href={`/words/${chapter.id}`}

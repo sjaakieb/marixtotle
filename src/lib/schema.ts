@@ -21,6 +21,12 @@ export const vocabExerciseSchema = z.object({
 	prompt: z.string().min(1),
 	answer: z.string().min(1),
 	alternatives: z.array(z.string().min(1)).min(1).max(6).optional(),
+	/**
+	 * Always-wrong answers for this question: graded wrong even when typo
+	 * leniency would accept them (e.g. "laeti" for "laetus" — one letter off
+	 * but a different case). Applies to the answer side of this exercise.
+	 */
+	wrongAnswers: z.array(z.string().min(1)).min(1).max(6).optional(),
 	direction: z.enum(vocabDirections),
 	hint: z.string().optional(),
 	options: z.array(z.string().min(1)).min(2).max(6).optional(),
@@ -36,6 +42,11 @@ export const declensionExerciseSchema = z.object({
 	form: z.string().optional(),
 	answer: z.string().min(1),
 	alternatives: z.array(z.string().min(1)).min(1).max(6).optional(),
+	/**
+	 * Always-wrong answers for this question: graded wrong even when typo
+	 * leniency would accept them (e.g. a different declension of the lemma).
+	 */
+	wrongAnswers: z.array(z.string().min(1)).min(1).max(6).optional(),
 	hint: z.string().optional(),
 	options: z.array(z.string().min(1)).min(2).max(6).optional(),
 });

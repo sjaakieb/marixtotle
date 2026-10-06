@@ -49,6 +49,48 @@ describe("words", () => {
 		expect(vocab).toHaveLength(2);
 	});
 
+	it("merges wrongAnswers per answer side", () => {
+		const chapter = chapterSchema.parse({
+			id: "test-wrong",
+			title: "Test",
+			language: "latin",
+			exercises: [
+				{
+					id: "w1",
+					type: "vocab",
+					prompt: "blij",
+					answer: "laetus",
+					wrongAnswers: ["laeti"],
+					direction: "nl->la",
+				},
+				{
+					id: "w2",
+					type: "vocab",
+					prompt: "laetus",
+					answer: "blij",
+					wrongAnswers: ["droevig"],
+					direction: "la->nl",
+				},
+				{
+					id: "w3",
+					type: "declension",
+					prompt: "laetus – nominativus",
+					answer: "laetus",
+					wrongAnswers: ["laeti", "laetum"],
+				},
+			],
+		} as const);
+		const items = getMasteryItems(chapter);
+		const vocab = items.find((i) => i.kind === "vocab");
+		expect(vocab?.kind === "vocab" && vocab.wrongForeign).toEqual(["laeti"]);
+		expect(vocab?.kind === "vocab" && vocab.wrongNl).toEqual(["droevig"]);
+		const decl = items.find((i) => i.key === "w3");
+		expect(decl?.kind === "declension" && decl.wrongAnswers).toEqual([
+			"laeti",
+			"laetum",
+		]);
+	});
+
 	it("keeps declension as separate items", () => {
 		const chapter = chapterSchema.parse(raw);
 		const items = getMasteryItems(chapter);

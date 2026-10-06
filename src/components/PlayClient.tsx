@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	applyResult,
 	averageLevel,
 	buildSession,
+	buildTestSession,
 	type GeneratedQuestion,
 	sessionGrade,
 } from "@/lib/levels";
@@ -13,6 +14,7 @@ import {
 	type ChapterProgress,
 	getChapterStats,
 	loadChapterProgress,
+	pruneChapterProgress,
 	resetChapterProgress,
 	saveItemLevel,
 } from "@/lib/progress";
@@ -53,6 +55,7 @@ function questionToExercise(
 				prompt: q.prompt,
 				answer: q.answer,
 				alternatives: q.alternatives.length > 0 ? q.alternatives : undefined,
+				wrongAnswers: q.wrongAnswers.length > 0 ? q.wrongAnswers : undefined,
 				direction,
 				hint: q.showHint ? q.hint : undefined,
 				options: q.options,
@@ -69,13 +72,21 @@ function questionToExercise(
 			form: q.form,
 			answer: q.answer,
 			alternatives: q.alternatives.length > 0 ? q.alternatives : undefined,
+			wrongAnswers: q.wrongAnswers.length > 0 ? q.wrongAnswers : undefined,
 			hint: q.showHint ? q.hint : undefined,
 			options: q.options,
 		},
 	};
 }
 
-export function PlayClient({ chapter }: { chapter: Chapter }) {
+export function PlayClient({
+	chapter,
+	mode = "practice",
+}: {
+	chapter: Chapter;
+	mode?: "practice" | "test";
+}) {
+	const isTest = mode === "test";
 	const items = useMemo(() => getMasteryItems(chapter), [chapter]);
 	const [levels, setLevels] = useState<ChapterProgress>({});
 	const [loaded, setLoaded] = useState(false);
@@ -96,43 +107,47 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 		{},
 	);
 	const [session, setSession] = useState<GeneratedQuestion[]>([]);
-	const resetSessionState = (start: ChapterProgress) => {
-		setSessionStartLevels(start);
-		setSession(buildSession(items, start, SESSION_SIZE));
-		setIndex(0);
-		setScore(0);
-		setDone(false);
-		setResults([]);
-	};
+	const resetSessionState = useCallback(
+		(start: ChapterProgress) => {
+			setSessionStartLevels(start);
+			setSession(
+				isTest
+					? buildTestSession(items, SESSION_SIZE)
+					: buildSession(items, start, SESSION_SIZE),
+			);
+			setIndex(0);
+			setScore(0);
+			setDone(false);
+			setResults([]);
+		},
+		[items, isTest],
+	);
 	useEffect(() => {
 		if (!loaded) return;
-		const start = loadChapterProgress(chapter.id);
-		setSessionStartLevels(start);
-		setSession(buildSession(items, start, SESSION_SIZE));
-		setIndex(0);
-		setScore(0);
-		setDone(false);
-		setResults([]);
-	}, [loaded, chapter.id, items]);
+		// Drop stored keys for items that no longer exist (content edits),
+		// otherwise orphaned levels inflate the mastery % past 100.
+		const start = pruneChapterProgress(
+			chapter.id,
+			items.map((it) => it.key),
+		);
+		setLevels(start);
+		resetSessionState(start);
+	}, [loaded, chapter.id, items, resetSessionState]);
 
 	const current = session[index];
 	const total = session.length;
 	const liveStats = getChapterStats(items, levels);
-	const startPct =
-		items.length === 0
-			? 0
-			: Math.round(
-					(Object.values(sessionStartLevels).reduce((s, v) => s + v, 0) /
-						(items.length * 5)) *
-						100,
-				);
+	const startPct = getChapterStats(items, sessionStartLevels).pct;
 
 	const handleResult = (correct: boolean) => {
 		if (!current) return;
-		const prev = levels[current.itemKey] ?? 0;
-		const next = applyResult(prev, correct);
-		const updated = saveItemLevel(chapter.id, current.itemKey, next);
-		setLevels(updated);
+		// An exam never changes stored levels — it only reports a grade.
+		if (!isTest) {
+			const prev = levels[current.itemKey] ?? 0;
+			const next = applyResult(prev, correct);
+			const updated = saveItemLevel(chapter.id, current.itemKey, next);
+			setLevels(updated);
+		}
 		setResults((r) => [...r, correct]);
 		if (correct) setScore((s) => s + 1);
 	};
@@ -164,6 +179,33 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 	};
 
 	if (!loaded || session.length === 0) {
+		if (loaded && !isTest && items.length > 0) {
+			return (
+				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
+					<div className="text-4xl">🎉</div>
+					<h2 className="mt-3 text-2xl font-bold text-stone-900">
+						Hoofdstuk beheerst!
+					</h2>
+					<p className="mt-1 text-stone-600">
+						{chapter.title} — alle woorden op niveau 5.
+					</p>
+					<div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+						<Link
+							href={`/test/${chapter.id}`}
+							className="rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700"
+						>
+							Toetsen →
+						</Link>
+						<Link
+							href="/"
+							className="rounded-xl bg-white px-6 py-3 font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+						>
+							Ander hoofdstuk
+						</Link>
+					</div>
+				</div>
+			);
+		}
 		if (loaded && items.length === 0) {
 			return (
 				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
@@ -196,7 +238,7 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 						{grade >= 8 ? "🎉" : grade >= 5.5 ? "💪" : "📚"}
 					</div>
 					<h2 className="mt-3 text-2xl font-bold text-stone-900">
-						Sessie afgerond!
+						{isTest ? "Toets afgerond!" : "Sessie afgerond!"}
 					</h2>
 					<p className="mt-1 text-stone-600">{chapter.title}</p>
 					<div className="mt-6">
@@ -216,14 +258,21 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 						<div className="mt-4">
 							<ProgressBar current={score} total={total} />
 						</div>
-						<div className="mt-4 rounded-xl bg-violet-50 p-3 text-sm text-violet-800 ring-1 ring-violet-200">
-							Beheersing hoofdstuk:{" "}
-							<span className="font-bold">
-								{startPct}% → {liveStats.pct}%
-							</span>
-							{" • "}
-							{liveStats.mastered}/{liveStats.total} op niveau 5
-						</div>
+						{isTest ? (
+							<div className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200">
+								Toets telt niet mee voor de voortgang — blijf oefenen om alles
+								op niveau 5 te houden.
+							</div>
+						) : (
+							<div className="mt-4 rounded-xl bg-violet-50 p-3 text-sm text-violet-800 ring-1 ring-violet-200">
+								Beheersing hoofdstuk:{" "}
+								<span className="font-bold">
+									{startPct}% → {liveStats.pct}%
+								</span>
+								{" • "}
+								{liveStats.mastered}/{liveStats.total} op niveau 5
+							</div>
+						)}
 					</div>
 					<div className="mt-6 grid grid-cols-10 gap-1.5">
 						{results.map((r, i) => (
@@ -244,7 +293,7 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 							onClick={handleRestart}
 							className="rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700"
 						>
-							Volgende 10 →
+							{isTest ? "Opnieuw toetsen →" : "Volgende →"}
 						</button>
 						<Link
 							href="/"
@@ -253,13 +302,15 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 							Ander hoofdstuk
 						</Link>
 					</div>
-					<button
-						type="button"
-						onClick={handleReset}
-						className="mt-3 text-xs font-medium text-stone-400 hover:text-red-600 hover:underline"
-					>
-						Voortgang wissen
-					</button>
+					{!isTest && (
+						<button
+							type="button"
+							onClick={handleReset}
+							className="mt-3 text-xs font-medium text-stone-400 hover:text-red-600 hover:underline"
+						>
+							Voortgang wissen
+						</button>
+					)}
 				</div>
 			</div>
 		);
@@ -300,16 +351,24 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 			</div>
 			<ProgressBar current={index} total={total} />
 			<div className="flex items-center justify-between text-xs font-medium text-stone-500">
-				<span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 ring-1 ring-violet-200">
-					Beheersing: {liveStats.pct}%
-				</span>
-				<button
-					type="button"
-					onClick={handleReset}
-					className="hover:text-red-600 hover:underline"
-				>
-					Reset voortgang
-				</button>
+				{isTest ? (
+					<span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200">
+						Toets • L3–L5 • telt niet mee
+					</span>
+				) : (
+					<span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 ring-1 ring-violet-200">
+						Beheersing: {liveStats.pct}%
+					</span>
+				)}
+				{!isTest && (
+					<button
+						type="button"
+						onClick={handleReset}
+						className="hover:text-red-600 hover:underline"
+					>
+						Reset voortgang
+					</button>
+				)}
 			</div>
 			<div className="rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-stone-200">
 				<ExerciseView
@@ -322,6 +381,7 @@ export function PlayClient({ chapter }: { chapter: Chapter }) {
 					levelBadge={current.badge}
 					audioText={current.audioText}
 					audioLang={audioLang}
+					translation={current.translation}
 					hideHint={!current.showHint}
 				/>
 			</div>

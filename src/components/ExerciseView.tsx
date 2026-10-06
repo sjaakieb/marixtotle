@@ -2,7 +2,12 @@
 
 import { useMemo, useRef, useState } from "react";
 import { insertAtCursor, toggleMacronBeforeCursor } from "@/lib/macron";
-import { isExerciseCorrect, normalize } from "@/lib/matcher";
+import {
+	detectWrongLanguage,
+	gradeExercise,
+	isExerciseCorrect,
+	normalize,
+} from "@/lib/matcher";
 import type { Exercise, LanguageId } from "@/lib/schema";
 import {
 	getLanguageFromDirection,
@@ -34,6 +39,8 @@ type Props = {
 	/** when set, prompt is an audio question: play this text via speech synthesis */
 	audioText?: string;
 	audioLang?: string;
+	/** Dutch meaning, revealed after answering an audio question */
+	translation?: string;
 	/** declension L5 hides the hint for a bare recall test */
 	hideHint?: boolean;
 };
@@ -47,6 +54,7 @@ export function ExerciseView({
 	levelBadge,
 	audioText,
 	audioLang,
+	translation,
 	hideHint,
 }: Props) {
 	const isMCQ = !!exercise.options && exercise.options.length > 0;
@@ -72,6 +80,7 @@ export function ExerciseView({
 			levelBadge={levelBadge}
 			audioText={audioText}
 			audioLang={audioLang}
+			translation={translation}
 			hideHint={hideHint}
 		/>
 	);
@@ -187,6 +196,7 @@ function TextInputExercise({
 	levelBadge,
 	audioText,
 	audioLang,
+	translation,
 	hideHint,
 }: Props) {
 	const [value, setValue] = useState("");
@@ -205,7 +215,25 @@ function TextInputExercise({
 	const showMacronToolbar = needsMacronLegacy && inferredLanguage === "latin";
 	const effectiveLanguage: LanguageId =
 		(inferredLanguage as LanguageId) ?? "latin";
-	const correct = isExerciseCorrect(value, exercise);
+	const grade = gradeExercise(value, exercise);
+	const correct = grade !== "wrong";
+	const isTypo = submitted && grade === "typo";
+	// Wrong language? Explain instead of a bare "Niet correct" (e.g. typed
+	// the Dutch meaning on a listening question, or copied the prompt).
+	const wrongLanguage =
+		submitted && !correct
+			? detectWrongLanguage(value, exercise, translation, exercise.prompt)
+			: undefined;
+	const wantsForeign =
+		exercise.type !== "vocab" || exercise.direction.startsWith("nl->");
+	let wrongLanguageHint: string | undefined;
+	if (wrongLanguage === "typed-translation") {
+		wrongLanguageHint = `Dat is de Nederlandse betekenis — type het ${getLanguageLabel(effectiveLanguage)} woord dat je hoort.`;
+	} else if (wrongLanguage === "copied-prompt") {
+		wrongLanguageHint = wantsForeign
+			? `Je typte de vraag over — type het ${getLanguageLabel(effectiveLanguage)} woord.`
+			: "Je typte de vraag over — type de Nederlandse vertaling.";
+	}
 	const isAlternative =
 		submitted && correct && normalize(value) !== normalize(exercise.answer);
 
@@ -319,6 +347,9 @@ function TextInputExercise({
 						isLast={isLast}
 						onNext={handleNext}
 						isAlternative={isAlternative}
+						isTypo={isTypo}
+						translation={translation}
+						wrongLanguageHint={wrongLanguageHint}
 						userInput={value}
 					/>
 				)}
@@ -425,6 +456,9 @@ function Feedback({
 	isLast,
 	onNext,
 	isAlternative,
+	isTypo,
+	translation,
+	wrongLanguageHint,
 	userInput,
 }: {
 	correct: boolean;
@@ -433,6 +467,9 @@ function Feedback({
 	isLast: boolean;
 	onNext: () => void;
 	isAlternative?: boolean;
+	isTypo?: boolean;
+	translation?: string;
+	wrongLanguageHint?: string;
 	userInput?: string;
 }) {
 	return (
@@ -453,6 +490,19 @@ function Feedback({
 			>
 				{correct ? "✓ Correct!" : "✗ Niet correct"}
 			</div>
+			{correct && isTypo && (
+				<div className="mt-1 text-sm text-amber-700">
+					Let op, typfoutje
+					{userInput ? (
+						<>
+							: <span className="font-semibold">“{userInput}”</span> →{" "}
+						</>
+					) : (
+						": "
+					)}
+					<span className="font-semibold">{answer}</span>
+				</div>
+			)}
 			{correct && isAlternative && userInput && (
 				<div className="mt-1 text-sm text-emerald-700">
 					Jouw antwoord <span className="font-semibold">“{userInput}”</span> is
@@ -463,6 +513,16 @@ function Feedback({
 			{!correct && (
 				<div className="mt-1 text-sm text-stone-700">
 					Correct antwoord: <span className="font-semibold">{answer}</span>
+				</div>
+			)}
+			{!correct && wrongLanguageHint && (
+				<div className="mt-1 text-sm font-medium text-amber-700">
+					⚠️ {wrongLanguageHint}
+				</div>
+			)}
+			{translation && (
+				<div className="mt-1 text-sm text-stone-600">
+					Betekenis: <span className="font-semibold">{translation}</span>
 				</div>
 			)}
 			{hint && <div className="mt-1 text-sm text-stone-600">💡 {hint}</div>}

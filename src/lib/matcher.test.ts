@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
 	canonicalDutchPronouns,
+	detectWrongLanguage,
+	editDistance,
 	getAnswerCandidates,
+	gradeExercise,
 	isCorrect,
 	isCorrectLenient,
 	isExerciseCorrect,
 	normalize,
+	stripDiacritics,
 	stripMacrons,
 } from "./matcher";
 
@@ -96,13 +100,17 @@ describe("isExerciseCorrect with alternatives & implicit alias", () => {
 		expect(isExerciseCorrect("mira", { answer: "mirus, -a, -um" })).toBe(true);
 		expect(isExerciseCorrect("mirum", { answer: "mirus, -a, -um" })).toBe(true);
 	});
-	it("rejects unrelated", () => {
+	it("one-letter-off counts as typo (accepted with notice)", () => {
+		expect(gradeExercise("laeti", { answer: "laetus, -a, -um" })).toBe("typo");
 		expect(isExerciseCorrect("laeti", { answer: "laetus, -a, -um" })).toBe(
-			false,
+			true,
 		);
+	});
+	it("rejects unrelated", () => {
 		expect(isExerciseCorrect("bonus", { answer: "laetus, -a, -um" })).toBe(
 			false,
 		);
+		expect(gradeExercise("bonus", { answer: "laetus, -a, -um" })).toBe("wrong");
 	});
 	it("getAnswerCandidates includes implicit", () => {
 		expect(getAnswerCandidates("laetus, -a, -um")).toContain("laetus");
@@ -112,6 +120,177 @@ describe("isExerciseCorrect with alternatives & implicit alias", () => {
 		expect(getAnswerCandidates("mirus, -a, -um")).toContain("mira");
 		expect(getAnswerCandidates("mirus, -a, -um")).toContain("mirum");
 		expect(getAnswerCandidates("donum")).toEqual(["donum"]);
+	});
+});
+
+describe("editDistance", () => {
+	it("exact is 0", () => {
+		expect(editDistance("vacances", "vacances")).toBe(0);
+	});
+	it("insert/delete/substitute cost 1", () => {
+		expect(editDistance("vacance", "vacances")).toBe(1);
+		expect(editDistance("vacances", "vacance")).toBe(1);
+		expect(editDistance("vacances", "vacancxs")).toBe(1);
+	});
+	it("adjacent transposition costs 1", () => {
+		expect(editDistance("genitvius", "genitivus")).toBe(1);
+	});
+	it("two edits cost 2", () => {
+		expect(editDistance("vakanses", "vacances")).toBe(2);
+	});
+});
+
+describe("stripDiacritics", () => {
+	it("strips French accents and ligatures", () => {
+		expect(stripDiacritics("café")).toBe("cafe");
+		expect(stripDiacritics("français")).toBe("francais");
+		expect(stripDiacritics("cœur")).toBe("coeur");
+	});
+	it("strips Latin macrons and Greek tonos", () => {
+		expect(stripDiacritics("puellā")).toBe("puella");
+		expect(stripDiacritics("μαθητής")).toBe("μαθητης");
+	});
+});
+
+describe("gradeExercise (Duolingo-style)", () => {
+	it("exact matches grade exact", () => {
+		expect(gradeExercise("les vacances", { answer: "les vacances" })).toBe(
+			"exact",
+		);
+		expect(gradeExercise("Puellā", { answer: "puellā" })).toBe("exact");
+	});
+	it("one typo in a long word grades typo (still correct)", () => {
+		expect(gradeExercise("les vacance", { answer: "les vacances" })).toBe(
+			"typo",
+		);
+		expect(gradeExercise("les vaccances", { answer: "les vacances" })).toBe(
+			"typo",
+		);
+		expect(gradeExercise("genitvius", { answer: "genitivus" })).toBe("typo");
+		expect(isExerciseCorrect("les vacance", { answer: "les vacances" })).toBe(
+			true,
+		);
+	});
+	it("accepts missing final -t in alsjeblieft (regression)", () => {
+		expect(
+			gradeExercise("alsjeblief", {
+				answer: "alsjeblieft",
+				direction: "fr->nl",
+			}),
+		).toBe("typo");
+		expect(
+			isExerciseCorrect("alsjeblief", {
+				answer: "alsjeblieft",
+				direction: "fr->nl",
+			}),
+		).toBe(true);
+	});
+	it("short words (≤4 chars) must be exact", () => {
+		expect(gradeExercise("ui", { answer: "oui" })).toBe("wrong");
+		expect(gradeExercise("il et", { answer: "il est" })).toBe("wrong");
+		expect(gradeExercise("oui", { answer: "oui" })).toBe("exact");
+	});
+	it("two typos grade wrong", () => {
+		expect(gradeExercise("les vakanses", { answer: "les vacances" })).toBe(
+			"wrong",
+		);
+		expect(isExerciseCorrect("les vakanses", { answer: "les vacances" })).toBe(
+			false,
+		);
+	});
+	it("missing/extra whole words grade wrong", () => {
+		expect(gradeExercise("heet je", { answer: "Hoe heet je" })).toBe("wrong");
+	});
+	it("missing/wrong accents grade typo, not wrong", () => {
+		expect(gradeExercise("cafe", { answer: "café" })).toBe("typo");
+		expect(gradeExercise("puella", { answer: "puellā" })).toBe("typo");
+		expect(gradeExercise("francais", { answer: "français" })).toBe("typo");
+	});
+	it("accent plus letter error grades wrong", () => {
+		expect(gradeExercise("cafee", { answer: "café" })).toBe("wrong");
+	});
+	it("punctuation-only differences grade exact", () => {
+		expect(
+			gradeExercise("Hoe heet je", {
+				answer: "Hoe heet je?",
+				direction: "fr->nl",
+			}),
+		).toBe("exact");
+		expect(gradeExercise("lhomme", { answer: "l'homme" })).toBe("exact");
+	});
+	it("Greek final sigma is accepted", () => {
+		expect(gradeExercise("μαθητησ", { answer: "μαθητής" })).toBe("typo");
+	});
+	it("typo works alongside alternatives and je/jij leniency", () => {
+		expect(gradeExercise("laetis", { answer: "laetus, -a, -um" })).toBe("typo");
+		expect(
+			gradeExercise("Hoe heet je", {
+				answer: "Hoe heet jij?",
+				direction: "fr->nl",
+			}),
+		).toBe("exact");
+	});
+});
+
+describe("gradeExercise with wrongAnswers denylist", () => {
+	const ex = {
+		answer: "laetus, -a, -um",
+		alternatives: ["laetus", "laeta", "laetum"],
+		wrongAnswers: ["laeti"],
+	};
+	it("denylisted typo-close answer grades wrong", () => {
+		expect(gradeExercise("laeti", ex)).toBe("wrong");
+		expect(isExerciseCorrect("laeti", ex)).toBe(false);
+	});
+	it("denylist matches case-insensitively", () => {
+		expect(gradeExercise("LAETI", ex)).toBe("wrong");
+	});
+	it("exact match beats the denylist", () => {
+		expect(
+			gradeExercise("laetus", { answer: "laetus", wrongAnswers: ["laetus"] }),
+		).toBe("exact");
+	});
+	it("non-denylisted inputs are unaffected", () => {
+		expect(gradeExercise("laetus", ex)).toBe("exact");
+		expect(gradeExercise("laetis", ex)).toBe("typo");
+		expect(gradeExercise("bonus", ex)).toBe("wrong");
+	});
+});
+
+describe("detectWrongLanguage", () => {
+	const audioEx = {
+		answer: "je préfère",
+		direction: "nl->fr",
+		prompt: "🔊 Luister en type het woord",
+	};
+	it("detects the typed Dutch meaning on a listening question", () => {
+		expect(detectWrongLanguage("ik heb liever", audioEx, "ik heb liever")).toBe(
+			"typed-translation",
+		);
+	});
+	it("detects a typo'd meaning too", () => {
+		expect(detectWrongLanguage("ik heb lievr", audioEx, "ik heb liever")).toBe(
+			"typed-translation",
+		);
+	});
+	it("detects copying the prompt instead of translating", () => {
+		expect(
+			detectWrongLanguage(
+				"voilà",
+				{ answer: "alsjeblieft", direction: "fr->nl" },
+				undefined,
+				"voilà",
+			),
+		).toBe("copied-prompt");
+	});
+	it("returns undefined for correct, empty, and genuinely wrong answers", () => {
+		expect(
+			detectWrongLanguage("je préfère", audioEx, "ik heb liever"),
+		).toBeUndefined();
+		expect(detectWrongLanguage("", audioEx, "ik heb liever")).toBeUndefined();
+		expect(
+			detectWrongLanguage("merci beaucoup", audioEx, "ik heb liever"),
+		).toBeUndefined();
 	});
 });
 

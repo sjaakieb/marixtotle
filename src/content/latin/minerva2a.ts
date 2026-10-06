@@ -109,6 +109,8 @@ export const rawChapter = {
 			prompt: "blij, vrolijk, opgewekt",
 			answer: "laetus, -a, -um",
 			alternatives: ["laetus", "laeta", "laetum"],
+			// "laeti" is one letter off but a different case — never accept it
+			wrongAnswers: ["laeti"],
 			direction: "nl->la",
 		},
 		{

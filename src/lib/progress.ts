@@ -91,10 +91,50 @@ export function getChapterStats(
 	const total = items.length;
 	let sum = 0;
 	let mastered = 0;
+	// Only count keys that still exist: content edits can orphan stored keys
+	// (e.g. renamed items), which otherwise inflate the sum past 100%.
+	const known: ChapterProgress = {};
 	for (const it of items) {
 		const lv = Math.min(5, Math.max(0, Math.round(levels[it.key] ?? 0)));
 		sum += lv;
 		if (lv >= 5) mastered++;
+		known[it.key] = lv;
 	}
-	return { total, sum, pct: masteryPct(levels, total), mastered };
+	return { total, sum, pct: masteryPct(known, total), mastered };
+}
+
+/** Chapter fully mastered (and non-empty): every current item at level 5. */
+export function isChapterComplete(
+	items: MasteryItem[],
+	levels: ChapterProgress,
+): boolean {
+	return (
+		items.length > 0 &&
+		items.every((it) => Math.round(levels[it.key] ?? 0) >= 5)
+	);
+}
+
+/**
+ * Drop stored keys that no longer match any current item (after content
+ * edits). Returns the pruned record, already persisted.
+ */
+export function pruneChapterProgress(
+	chapterId: string,
+	validKeys: string[],
+): ChapterProgress {
+	const all = readStore();
+	const chapter = all[chapterId] ?? {};
+	const valid = new Set(validKeys);
+	let changed = false;
+	for (const k of Object.keys(chapter)) {
+		if (!valid.has(k)) {
+			delete chapter[k];
+			changed = true;
+		}
+	}
+	if (changed) {
+		all[chapterId] = chapter;
+		writeStore(all);
+	}
+	return chapter;
 }

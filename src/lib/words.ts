@@ -12,6 +12,10 @@ export type VocabItem = {
 	nlAlternatives: string[];
 	/** accepted variants for the foreign side */
 	foreignAlternatives: string[];
+	/** always-wrong answers when the Dutch side is graded */
+	wrongNl: string[];
+	/** always-wrong answers when the foreign side is graded */
+	wrongForeign: string[];
 	language: LanguageId;
 };
 
@@ -25,6 +29,8 @@ export type DeclItem = {
 	answer: string;
 	alternatives: string[];
 	hint?: string;
+	/** always-wrong answers: graded wrong even if typo-close */
+	wrongAnswers: string[];
 	/** pre-authored MCQ options, if any */
 	options?: string[];
 };
@@ -83,9 +89,12 @@ export function getMasteryItems(chapter: Chapter): MasteryItem[] {
 			const key = vocabGroupKey(foreign, language);
 			const isNlToForeign = ex.direction.startsWith("nl->");
 			const existing = vocab.get(key);
-			// Alternatives belong to the answer side of the source exercise.
+			// Alternatives and wrong-answers belong to the answer side of the
+			// source exercise.
 			const nlAlts = isNlToForeign ? [] : (ex.alternatives ?? []);
 			const foreignAlts = isNlToForeign ? (ex.alternatives ?? []) : [];
+			const nlWrong = isNlToForeign ? [] : (ex.wrongAnswers ?? []);
+			const foreignWrong = isNlToForeign ? (ex.wrongAnswers ?? []) : [];
 			// Prefer the cleanest Dutch label (no parenthetical note, shortest).
 			const cleanNl = stripParens(nl).trim() || nl;
 			if (!existing) {
@@ -97,6 +106,8 @@ export function getMasteryItems(chapter: Chapter): MasteryItem[] {
 					hint: ex.hint,
 					nlAlternatives: [...nlAlts],
 					foreignAlternatives: [...foreignAlts],
+					wrongNl: [...nlWrong],
+					wrongForeign: [...foreignWrong],
 					language,
 				});
 			} else {
@@ -121,6 +132,12 @@ export function getMasteryItems(chapter: Chapter): MasteryItem[] {
 					if (!existing.foreignAlternatives.includes(a))
 						existing.foreignAlternatives.push(a);
 				}
+				for (const w of nlWrong) {
+					if (!existing.wrongNl.includes(w)) existing.wrongNl.push(w);
+				}
+				for (const w of foreignWrong) {
+					if (!existing.wrongForeign.includes(w)) existing.wrongForeign.push(w);
+				}
 			}
 		} else {
 			decl.push({
@@ -132,6 +149,7 @@ export function getMasteryItems(chapter: Chapter): MasteryItem[] {
 				answer: ex.answer,
 				alternatives: ex.alternatives ?? [],
 				hint: ex.hint,
+				wrongAnswers: [...(ex.wrongAnswers ?? [])],
 				options: ex.options,
 			});
 		}

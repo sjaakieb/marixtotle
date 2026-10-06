@@ -15,11 +15,15 @@ export type GeneratedQuestion = {
 	prompt: string;
 	answer: string;
 	alternatives: string[];
+	/** always-wrong answers for the side graded by this question */
+	wrongAnswers: string[];
 	/** present for MCQ levels */
 	options?: string[];
 	/** present for audio level (L4 vocab) */
 	audioText?: string;
 	audioLang?: string;
+	/** Dutch meaning, shown after answering an audio (L4) question */
+	translation?: string;
 	hint?: string;
 	showHint: boolean;
 	lemma?: string;
@@ -92,21 +96,47 @@ function shuffle<T>(arr: T[]): T[] {
 	return a;
 }
 
+/**
+ * Near-duplicate options confuse learners ("grand" vs "grand / grande").
+ * A candidate clashes when one contains the other (short side ≥4 chars so
+ * short words like "un"/"à" never wipe the pool).
+ */
+function clashesWithKnown(candidate: string, known: string[]): boolean {
+	return known.some((e) => {
+		if (candidate === e) return false;
+		const [short, long] =
+			candidate.length <= e.length ? [candidate, e] : [e, candidate];
+		return short.length >= 4 && long.includes(short);
+	});
+}
+
 function sampleDistractors(
 	pool: string[],
 	exclude: string[],
 	n: number,
 ): string[] {
-	const seen = new Set(exclude.map((s) => s.toLowerCase().trim()));
+	const normExclude = exclude.map((s) => s.toLowerCase().trim());
+	const seen = new Set<string>();
 	const out: string[] = [];
+	const deferred: string[] = [];
 	for (const c of shuffle(pool)) {
-		const k = c.toLowerCase().trim();
-		if (!k || seen.has(k)) continue;
-		seen.add(k);
-		out.push(c);
 		if (out.length >= n) break;
+		const k = c.toLowerCase().trim();
+		if (!k || normExclude.includes(k) || seen.has(k)) continue;
+		seen.add(k);
+		const known = [...normExclude, ...out.map((o) => o.toLowerCase().trim())];
+		if (clashesWithKnown(k, known)) {
+			// Only use confusingly similar options if the pool runs dry.
+			deferred.push(c);
+			continue;
+		}
+		out.push(c);
 	}
-	return out;
+	for (const c of deferred) {
+		if (out.length >= n) break;
+		out.push(c);
+	}
+	return out.slice(0, n);
 }
 
 function vocabPool(items: MasteryItem[], side: "nl" | "foreign"): string[] {
@@ -163,6 +193,7 @@ function buildVocabQuestion(
 				prompt: item.foreign,
 				answer: item.nl,
 				alternatives: item.nlAlternatives,
+				wrongAnswers: item.wrongNl,
 				options: shuffle([item.nl, ...distractors]),
 				hint: item.hint,
 				showHint: true,
@@ -178,6 +209,7 @@ function buildVocabQuestion(
 				prompt: item.nl,
 				answer: item.foreign,
 				alternatives: item.foreignAlternatives,
+				wrongAnswers: item.wrongForeign,
 				options: shuffle([item.foreign, ...distractors]),
 				hint: item.hint,
 				showHint: true,
@@ -192,6 +224,7 @@ function buildVocabQuestion(
 				prompt: item.foreign,
 				answer: item.nl,
 				alternatives: item.nlAlternatives,
+				wrongAnswers: item.wrongNl,
 				hint: item.hint,
 				showHint: true,
 				badge: vocabBadge(level, `${langShort(item.language)} → NL`),
@@ -204,7 +237,9 @@ function buildVocabQuestion(
 				prompt: "🔊 Luister en type het woord",
 				answer: item.foreign,
 				alternatives: item.foreignAlternatives,
+				wrongAnswers: item.wrongForeign,
 				audioText: item.foreign,
+				translation: item.nl,
 				hint: item.hint,
 				showHint: false,
 				badge: vocabBadge(level, "audio → typen"),
@@ -217,6 +252,7 @@ function buildVocabQuestion(
 				prompt: item.nl,
 				answer: item.foreign,
 				alternatives: item.foreignAlternatives,
+				wrongAnswers: item.wrongForeign,
 				hint: item.hint,
 				showHint: true,
 				badge: vocabBadge(level, `NL → ${langShort(item.language)}`),
@@ -254,6 +290,7 @@ function buildDeclQuestion(
 			prompt: item.prompt,
 			answer: item.answer,
 			alternatives: item.alternatives,
+			wrongAnswers: item.wrongAnswers,
 			options: shuffle(options).slice(0, 4),
 			hint: item.hint,
 			showHint: level === 1,
@@ -271,6 +308,7 @@ function buildDeclQuestion(
 		prompt: item.prompt,
 		answer: item.answer,
 		alternatives: item.alternatives,
+		wrongAnswers: item.wrongAnswers,
 		hint: item.hint,
 		showHint: !bare,
 		lemma: item.lemma,
@@ -284,7 +322,14 @@ export function buildQuestion(
 	storedLevel: number,
 	allItems: MasteryItem[],
 ): GeneratedQuestion {
-	const level = nextLevelForItem(storedLevel);
+	return buildQuestionAtLevel(item, nextLevelForItem(storedLevel), allItems);
+}
+
+export function buildQuestionAtLevel(
+	item: MasteryItem,
+	level: Level,
+	allItems: MasteryItem[],
+): GeneratedQuestion {
 	if (item.kind === "vocab") return buildVocabQuestion(item, level, allItems);
 	return buildDeclQuestion(item, level, allItems);
 }
@@ -304,17 +349,11 @@ export function buildSession(
 		final: [],
 	};
 	for (const it of items) {
-		// Mastered items (5) stay out of the rotation while anything else
-		// remains; if everything is mastered, fall back to practicing all.
+		// Mastered items (5) stay out of the rotation. When everything is
+		// mastered the session is empty on purpose: practice is done, the
+		// main screen offers a toets instead. Never repeat words to fill up.
 		if ((levels[it.key] ?? 0) >= MAX_LEVEL) continue;
 		byBand[bandForStored(levels[it.key] ?? 0)].push(it);
-	}
-	if (
-		byBand.recognition.length === 0 &&
-		byBand.production.length === 0 &&
-		byBand.final.length === 0
-	) {
-		for (const it of items) byBand.final.push(it);
 	}
 	for (const band of Object.values(byBand)) {
 		band.sort((a, b) => (levels[a.key] ?? 0) - (levels[b.key] ?? 0));
@@ -330,20 +369,49 @@ export function buildSession(
 			if (!picked.includes(it)) picked.push(it);
 		}
 	}
-	// Repeat with reshuffles if fewer distinct items than slots (small chapters).
+	return picked.map((it) => buildQuestion(it, levels[it.key] ?? 0, items));
+}
+
+/**
+ * Exam ("toets") session for a fully mastered chapter: `size` questions over
+ * various words, levels round-robin L3/L4/L5 (as evenly as possible: 4/3/3
+ * for 10). Distinct words first; repeats (small chapters) keep cycling
+ * levels so the split stays even. Stored levels are irrelevant here.
+ */
+export function buildTestSession(
+	items: MasteryItem[],
+	size: number = SESSION_SIZE,
+): GeneratedQuestion[] {
+	if (items.length === 0 || size <= 0) return [];
+	const testLevels: Level[] = [3, 4, 5];
+	const picked: MasteryItem[] = [];
+	const seen = new Set<string>();
+	// First pass: distinct words, shuffled.
+	for (const it of shuffle(items)) {
+		if (picked.length >= size) break;
+		if (seen.has(it.key)) continue;
+		seen.add(it.key);
+		picked.push(it);
+	}
+	// Second pass: reshuffled repeats for small chapters.
 	while (picked.length < size) {
-		const all = shuffle([
-			...byBand.recognition,
-			...byBand.production,
-			...byBand.final,
-		]);
-		if (all.length === 0) break;
-		for (const it of all) {
+		const round = shuffle(items);
+		if (round.length === 0) break;
+		let added = false;
+		for (const it of round) {
 			if (picked.length >= size) break;
 			picked.push(it);
+			added = true;
 		}
+		if (!added) break;
 	}
-	return picked.map((it) => buildQuestion(it, levels[it.key] ?? 0, items));
+	return picked.map((it, idx) =>
+		buildQuestionAtLevel(
+			it,
+			testLevels[idx % testLevels.length] as Level,
+			items,
+		),
+	);
 }
 
 /** Session grade 0–10: each of the 10 questions is worth 1 point. */

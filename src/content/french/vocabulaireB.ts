@@ -72,7 +72,7 @@ const rawChapter = {
 		{
 			id: "vocB-9",
 			type: "vocab",
-			prompt: "génial / géniale",
+			prompt: "génial",
 			answer: "geweldig",
 			direction: "fr->nl",
 		},
@@ -81,7 +81,9 @@ const rawChapter = {
 			type: "vocab",
 			prompt: "geweldig",
 			answer: "génial",
+			alternatives: ["géniale"],
 			direction: "nl->fr",
+			hint: "mannelijk: génial, vrouwelijk: géniale",
 			options: ["génial", "petit", "grand", "avec"],
 		},
 		{
@@ -296,7 +298,7 @@ const rawChapter = {
 		{
 			id: "vocB-37",
 			type: "vocab",
-			prompt: "petit / petite",
+			prompt: "petit",
 			answer: "klein",
 			direction: "fr->nl",
 		},
@@ -305,7 +307,9 @@ const rawChapter = {
 			type: "vocab",
 			prompt: "klein",
 			answer: "petit",
+			alternatives: ["petite"],
 			direction: "nl->fr",
+			hint: "mannelijk: petit, vrouwelijk: petite",
 			options: ["petit", "grand", "avec", "dans"],
 		},
 		{
@@ -320,7 +324,7 @@ const rawChapter = {
 		{
 			id: "vocB-40",
 			type: "vocab",
-			prompt: "grand / grande",
+			prompt: "grand",
 			answer: "groot",
 			direction: "fr->nl",
 			options: ["groot", "klein", "met", "ook"],
