@@ -28,16 +28,45 @@ export type GeneratedQuestion = {
 	badge: string;
 };
 
-/** Stored mastery = highest completed level (0 = unseen). Next question tests stored+1. */
-export function nextLevelForItem(stored: number): Level {
-	const n = Math.min(Math.max(Math.round(stored) + 1, 1), MAX_LEVEL);
-	return n as Level;
+/**
+ * Staged mastery: each word needs at most 3 correct answers.
+ * - stored 0–1 → recognition band: one random L1-or-L2 question
+ * - stored 2–3 → production band: one random L3-or-L4 question (50/50, audio kept)
+ * - stored 4   → L5 (final typing test, finishes the word at 5)
+ * - stored 5   → mastered
+ */
+export type Band = "recognition" | "production" | "final";
+
+export function bandForStored(stored: number): Band {
+	const s = Math.min(Math.max(Math.round(stored), MIN_LEVEL), MAX_LEVEL);
+	if (s <= 1) return "recognition";
+	if (s <= 3) return "production";
+	return "final";
 }
 
-/** Correct → +1 (cap 5). Wrong → −1 (floor 0). */
+/** Random pick within a band: 50/50 L1-vs-L2 and 50/50 L3-vs-L4. L5 band always 5. */
+export function pickLevelInBand(band: Band): Level {
+	if (band === "recognition") return Math.random() < 0.5 ? 1 : 2;
+	if (band === "production") return Math.random() < 0.5 ? 3 : 4;
+	return 5;
+}
+
+/** Stored mastery → next question level: random within the stored band. */
+export function nextLevelForItem(stored: number): Level {
+	return pickLevelInBand(bandForStored(stored));
+}
+
+/**
+ * Correct → jump to the next band entry (0→2, 1→2, 2→4, 3→4, 4→5, cap 5).
+ * Wrong → −1 (floor 0), dropping back into (or within) the earlier band.
+ */
 export function applyResult(stored: number, correct: boolean): number {
 	const s = Math.min(Math.max(Math.round(stored), MIN_LEVEL), MAX_LEVEL);
-	if (correct) return Math.min(MAX_LEVEL, s + 1);
+	if (correct) {
+		if (s <= 1) return 2;
+		if (s <= 3) return 4;
+		return MAX_LEVEL;
+	}
 	return Math.max(MIN_LEVEL, s - 1);
 }
 
@@ -266,20 +295,53 @@ export function buildSession(
 	size: number = SESSION_SIZE,
 ): GeneratedQuestion[] {
 	if (items.length === 0) return [];
-	// Prefer lowest-mastery items: sort asc, take a pool slightly larger than
-	// the session for variety, shuffle, then fill (with repeats if needed).
-	const ranked = [...items].sort(
-		(a, b) => (levels[a.key] ?? 0) - (levels[b.key] ?? 0),
-	);
-	const poolSize = Math.min(items.length, Math.max(size, 15));
-	const pool = shuffle(ranked.slice(0, poolSize));
+	// Band-prioritized fill: exhaust all L1/L2 items first, then spill leftover
+	// slots into L3/L4, then L5 — possibly within the same session.
+	// Within each band, prefer lowest mastery for variety.
+	const byBand: Record<Band, MasteryItem[]> = {
+		recognition: [],
+		production: [],
+		final: [],
+	};
+	for (const it of items) {
+		// Mastered items (5) stay out of the rotation while anything else
+		// remains; if everything is mastered, fall back to practicing all.
+		if ((levels[it.key] ?? 0) >= MAX_LEVEL) continue;
+		byBand[bandForStored(levels[it.key] ?? 0)].push(it);
+	}
+	if (
+		byBand.recognition.length === 0 &&
+		byBand.production.length === 0 &&
+		byBand.final.length === 0
+	) {
+		for (const it of items) byBand.final.push(it);
+	}
+	for (const band of Object.values(byBand)) {
+		band.sort((a, b) => (levels[a.key] ?? 0) - (levels[b.key] ?? 0));
+	}
 	const picked: MasteryItem[] = [];
+	for (const band of [byBand.recognition, byBand.production, byBand.final]) {
+		if (picked.length >= size || band.length === 0) continue;
+		// Shuffle within the band (keeps lowest-first variety while not
+		// always serving items in the same order).
+		const pool = shuffle(band);
+		for (const it of pool) {
+			if (picked.length >= size) break;
+			if (!picked.includes(it)) picked.push(it);
+		}
+	}
+	// Repeat with reshuffles if fewer distinct items than slots (small chapters).
 	while (picked.length < size) {
-		for (const it of shuffle(pool)) {
+		const all = shuffle([
+			...byBand.recognition,
+			...byBand.production,
+			...byBand.final,
+		]);
+		if (all.length === 0) break;
+		for (const it of all) {
 			if (picked.length >= size) break;
 			picked.push(it);
 		}
-		if (pool.length === 0) break;
 	}
 	return picked.map((it) => buildQuestion(it, levels[it.key] ?? 0, items));
 }

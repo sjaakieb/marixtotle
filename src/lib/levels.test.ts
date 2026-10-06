@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
 	applyResult,
 	averageLevel,
+	bandForStored,
 	buildQuestion,
 	buildSession,
 	masteryPct,
 	nextLevelForItem,
+	pickLevelInBand,
 	sessionGrade,
 } from "./levels";
 import type { MasteryItem } from "./words";
@@ -59,41 +61,76 @@ const items: MasteryItem[] = [
 ];
 
 describe("levels", () => {
-	it("unseen items start at L1, completed items advance", () => {
-		expect(nextLevelForItem(0)).toBe(1);
-		expect(nextLevelForItem(1)).toBe(2);
-		expect(nextLevelForItem(4)).toBe(5);
-		expect(nextLevelForItem(5)).toBe(5);
+	it("stored levels map to bands", () => {
+		expect(bandForStored(0)).toBe("recognition");
+		expect(bandForStored(1)).toBe("recognition");
+		expect(bandForStored(2)).toBe("production");
+		expect(bandForStored(3)).toBe("production");
+		expect(bandForStored(4)).toBe("final");
+		expect(bandForStored(5)).toBe("final");
 	});
 
-	it("correct +1 capped, wrong −1 floored", () => {
-		expect(applyResult(0, true)).toBe(1);
+	it("band picks are 50/50 random (audio L4 kept, not reduced)", () => {
+		expect(pickLevelInBand("final")).toBe(5);
+		const recog = new Set(
+			Array.from({ length: 50 }, () => pickLevelInBand("recognition")),
+		);
+		expect(recog.has(1)).toBe(true);
+		expect(recog.has(2)).toBe(true);
+		const prod = new Set(
+			Array.from({ length: 50 }, () => pickLevelInBand("production")),
+		);
+		expect(prod.has(3)).toBe(true);
+		expect(prod.has(4)).toBe(true);
+	});
+
+	it("next question is random within the stored band", () => {
+		for (let i = 0; i < 20; i++) {
+			expect([1, 2]).toContain(nextLevelForItem(0));
+			expect([1, 2]).toContain(nextLevelForItem(1));
+			expect([3, 4]).toContain(nextLevelForItem(2));
+			expect([3, 4]).toContain(nextLevelForItem(3));
+			expect(nextLevelForItem(4)).toBe(5);
+		}
+	});
+
+	it("correct jumps to next band, wrong −1 floored", () => {
+		expect(applyResult(0, true)).toBe(2);
+		expect(applyResult(1, true)).toBe(2);
+		expect(applyResult(2, true)).toBe(4);
+		expect(applyResult(3, true)).toBe(4);
 		expect(applyResult(4, true)).toBe(5);
 		expect(applyResult(5, true)).toBe(5);
 		expect(applyResult(3, false)).toBe(2);
 		expect(applyResult(0, false)).toBe(0);
 	});
 
-	it("L1 is foreign→NL MCQ, L2 is NL→foreign MCQ", () => {
-		const l1 = buildQuestion(items[0], 0, items);
-		expect(l1.level).toBe(1);
-		expect(l1.prompt).toBe("les vacances");
-		expect(l1.answer).toBe("de vakantie");
-		expect(l1.options).toContain("de vakantie");
-
-		const l2 = buildQuestion(items[0], 1, items);
-		expect(l2.level).toBe(2);
-		expect(l2.prompt).toBe("de vakantie");
-		expect(l2.answer).toBe("les vacances");
-		expect(l2.options).toContain("les vacances");
+	it("recognition band: L1 foreign→NL MCQ or L2 NL→foreign MCQ", () => {
+		for (let i = 0; i < 20; i++) {
+			const q = buildQuestion(items[0], 0, items);
+			expect([1, 2]).toContain(q.level);
+			expect(q.options).toContain(q.answer);
+			if (q.level === 1) {
+				expect(q.prompt).toBe("les vacances");
+				expect(q.answer).toBe("de vakantie");
+			} else {
+				expect(q.prompt).toBe("de vakantie");
+				expect(q.answer).toBe("les vacances");
+			}
+		}
 	});
 
-	it("L3/L5 are typing (no options), L4 is audio", () => {
-		expect(buildQuestion(items[0], 2, items).options).toBeUndefined();
-		const l4 = buildQuestion(items[0], 3, items);
-		expect(l4.level).toBe(4);
-		expect(l4.audioText).toBe("les vacances");
-		expect(l4.options).toBeUndefined();
+	it("production band: typing (L3) or audio (L4), no options", () => {
+		const seen = new Set<number>();
+		for (let i = 0; i < 20; i++) {
+			const q = buildQuestion(items[0], 2, items);
+			expect([3, 4]).toContain(q.level);
+			expect(q.options).toBeUndefined();
+			seen.add(q.level);
+			if (q.level === 4) expect(q.audioText).toBe("les vacances");
+		}
+		expect(seen.has(3)).toBe(true);
+		expect(seen.has(4)).toBe(true);
 		expect(buildQuestion(items[0], 4, items).level).toBe(5);
 	});
 
@@ -103,11 +140,32 @@ describe("levels", () => {
 		expect(masteryPct({}, 0)).toBe(0);
 	});
 
-	it("session always has 10 questions, prefers lowest levels", () => {
+	it("session always has 10 questions, skips mastered items", () => {
 		const session = buildSession(items, { a: 0, b: 0, c: 5, d: 5, e: 5 }, 10);
 		expect(session).toHaveLength(10);
-		const l1count = session.filter((q) => q.level === 1).length;
-		expect(l1count).toBeGreaterThan(0);
+		// Only a/b remain: all questions are recognition band, mastered c/d/e excluded.
+		expect(
+			session.every(
+				(q) =>
+					(q.level === 1 || q.level === 2) &&
+					(q.itemKey === "a" || q.itemKey === "b"),
+			),
+		).toBe(true);
+	});
+
+	it("session fills recognition band first, spills into production/final", () => {
+		// One item per band, session of 3 → deterministic band order.
+		const session = buildSession(items, { a: 0, b: 2, c: 4, d: 5, e: 5 }, 3);
+		expect(session.map((q) => q.itemKey)).toEqual(["a", "b", "c"]);
+		expect([1, 2]).toContain(session[0].level);
+		expect([3, 4]).toContain(session[1].level);
+		expect(session[2].level).toBe(5);
+	});
+
+	it("all-mastered chapter still yields a practice session", () => {
+		const session = buildSession(items, { a: 5, b: 5, c: 5, d: 5, e: 5 }, 10);
+		expect(session).toHaveLength(10);
+		expect(session.every((q) => q.level === 5)).toBe(true);
 	});
 
 	it("grade and average level", () => {
