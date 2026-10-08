@@ -27,24 +27,24 @@ export function LanguageToolbar({
 
 	if (language === "latin") {
 		return (
-			<div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200">
-				<span className="mr-1 text-xs font-medium text-stone-500">
+			<div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200 dark:bg-stone-800 dark:ring-stone-700">
+				<span className="mr-1 text-xs font-medium text-stone-500 dark:text-stone-400">
 					Macrons:
 				</span>
 				{MACRONS_LOWER.map((c) => (
 					<CharButton key={c} char={c} onInsert={onInsert} />
 				))}
-				<span className="mx-1 h-6 w-px bg-stone-200" />
+				<span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700" />
 				{MACRONS_UPPER.map((c) => (
 					<CharButton key={c} char={c} onInsert={onInsert} />
 				))}
 				{showToggle && onToggle && (
 					<>
-						<span className="mx-1 h-6 w-px bg-stone-200" />
+						<span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700" />
 						<button
 							type="button"
 							onClick={onToggle}
-							className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100"
+							className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-800 dark:hover:bg-amber-950"
 							title="Wissel klinker voor cursor (a ↔ ā)"
 						>
 							a ↔ ā
@@ -57,14 +57,14 @@ export function LanguageToolbar({
 
 	if (language === "french") {
 		return (
-			<div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200">
-				<span className="mr-1 text-xs font-medium text-stone-500">
+			<div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200 dark:bg-stone-800 dark:ring-stone-700">
+				<span className="mr-1 text-xs font-medium text-stone-500 dark:text-stone-400">
 					Accents:
 				</span>
 				{FRENCH_CHARS_LOWER.map((c) => (
 					<CharButton key={c} char={c} onInsert={onInsert} />
 				))}
-				<span className="mx-1 hidden h-6 w-px bg-stone-200 sm:block" />
+				<span className="mx-1 hidden h-6 w-px bg-stone-200 sm:block dark:bg-stone-700" />
 				{FRENCH_CHARS_UPPER.map((c) => (
 					<CharButton key={c} char={c} onInsert={onInsert} />
 				))}
@@ -74,9 +74,9 @@ export function LanguageToolbar({
 
 	if (language === "greek") {
 		return (
-			<div className="space-y-2 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200">
+			<div className="space-y-2 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200 dark:bg-stone-800 dark:ring-stone-700">
 				<div className="flex flex-wrap items-center gap-1">
-					<span className="mr-1 text-xs font-medium text-stone-500">
+					<span className="mr-1 text-xs font-medium text-stone-500 dark:text-stone-400">
 						Αλφάβητο:
 					</span>
 					{GREEK_LETTERS_LOWER.map((c) => (
@@ -84,13 +84,13 @@ export function LanguageToolbar({
 					))}
 				</div>
 				<div className="flex flex-wrap items-center gap-1">
-					<span className="mr-1 text-xs font-medium text-stone-500">
+					<span className="mr-1 text-xs font-medium text-stone-500 dark:text-stone-400">
 						Tonisch:
 					</span>
 					{GREEK_ACCENTED.map((c) => (
 						<CharButton key={c} char={c} onInsert={onInsert} />
 					))}
-					<span className="mx-1 h-6 w-px bg-stone-200" />
+					<span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700" />
 					{GREEK_LETTERS_UPPER.slice(0, 8).map((c) => (
 						<CharButton key={c} char={c} onInsert={onInsert} />
 					))}
@@ -113,7 +113,7 @@ function CharButton({
 		<button
 			type="button"
 			onClick={() => onInsert(char)}
-			className="min-w-8 rounded-md bg-white px-2 py-1.5 text-sm font-medium text-stone-900 shadow-sm ring-1 ring-stone-200 hover:bg-stone-100 active:scale-95"
+			className="min-w-8 rounded-md bg-white px-2 py-1.5 text-sm font-medium text-stone-900 shadow-sm ring-1 ring-stone-200 hover:bg-stone-100 active:scale-95 dark:bg-stone-900 dark:text-stone-100 dark:ring-stone-700 dark:hover:bg-stone-700"
 			aria-label={`Voeg ${char} in`}
 		>
 			{char}

@@ -181,12 +181,12 @@ export function PlayClient({
 	if (!loaded || session.length === 0) {
 		if (loaded && !isTest && items.length > 0) {
 			return (
-				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
+				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
 					<div className="text-4xl">🎉</div>
-					<h2 className="mt-3 text-2xl font-bold text-stone-900">
+					<h2 className="mt-3 text-2xl font-bold text-stone-900 dark:text-stone-50">
 						Hoofdstuk beheerst!
 					</h2>
-					<p className="mt-1 text-stone-600">
+					<p className="mt-1 text-stone-600 dark:text-stone-400">
 						{chapter.title} — alle woorden op niveau 5.
 					</p>
 					<div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
@@ -198,7 +198,7 @@ export function PlayClient({
 						</Link>
 						<Link
 							href="/"
-							className="rounded-xl bg-white px-6 py-3 font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+							className="rounded-xl bg-white px-6 py-3 font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-700"
 						>
 							Ander hoofdstuk
 						</Link>
@@ -208,8 +208,8 @@ export function PlayClient({
 		}
 		if (loaded && items.length === 0) {
 			return (
-				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
-					<div className="font-semibold text-stone-700">
+				<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
+					<div className="font-semibold text-stone-700 dark:text-stone-200">
 						Geen oefenitems in dit hoofdstuk.
 					</div>
 					<Link
@@ -222,7 +222,7 @@ export function PlayClient({
 			);
 		}
 		return (
-			<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center text-sm text-stone-500 ring-1 ring-stone-200">
+			<div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:bg-stone-900 dark:text-stone-400 dark:ring-stone-800">
 				Sessie laden…
 			</div>
 		);
@@ -233,25 +233,27 @@ export function PlayClient({
 		const avgLevel = averageLevel(session);
 		return (
 			<div className="mx-auto max-w-xl space-y-6">
-				<div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
+				<div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
 					<div className="text-4xl">
 						{grade >= 8 ? "🎉" : grade >= 5.5 ? "💪" : "📚"}
 					</div>
-					<h2 className="mt-3 text-2xl font-bold text-stone-900">
+					<h2 className="mt-3 text-2xl font-bold text-stone-900 dark:text-stone-50">
 						{isTest ? "Toets afgerond!" : "Sessie afgerond!"}
 					</h2>
-					<p className="mt-1 text-stone-600">{chapter.title}</p>
+					<p className="mt-1 text-stone-600 dark:text-stone-400">
+						{chapter.title}
+					</p>
 					<div className="mt-6">
-						<div className="text-5xl font-extrabold text-sky-600">
+						<div className="text-5xl font-extrabold text-sky-600 dark:text-sky-400">
 							{score} / {total}
 						</div>
-						<div className="mt-1 text-sm font-medium text-stone-500">
+						<div className="mt-1 text-sm font-medium text-stone-500 dark:text-stone-400">
 							Cijfer:{" "}
-							<span className="font-bold text-stone-800">
+							<span className="font-bold text-stone-800 dark:text-stone-100">
 								{grade.toFixed(1)}
 							</span>
 							{" • "}Gem. niveau:{" "}
-							<span className="font-bold text-stone-800">
+							<span className="font-bold text-stone-800 dark:text-stone-100">
 								{avgLevel.toFixed(1)}
 							</span>
 						</div>
@@ -259,12 +261,12 @@ export function PlayClient({
 							<ProgressBar current={score} total={total} />
 						</div>
 						{isTest ? (
-							<div className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200">
+							<div className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800">
 								Toets telt niet mee voor de voortgang — blijf oefenen om alles
 								op niveau 5 te houden.
 							</div>
 						) : (
-							<div className="mt-4 rounded-xl bg-violet-50 p-3 text-sm text-violet-800 ring-1 ring-violet-200">
+							<div className="mt-4 rounded-xl bg-violet-50 p-3 text-sm text-violet-800 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:ring-violet-800">
 								Beheersing hoofdstuk:{" "}
 								<span className="font-bold">
 									{startPct}% → {liveStats.pct}%
@@ -297,7 +299,7 @@ export function PlayClient({
 						</button>
 						<Link
 							href="/"
-							className="rounded-xl bg-white px-6 py-3 font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+							className="rounded-xl bg-white px-6 py-3 font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-700"
 						>
 							Ander hoofdstuk
 						</Link>
@@ -306,7 +308,7 @@ export function PlayClient({
 						<button
 							type="button"
 							onClick={handleReset}
-							className="mt-3 text-xs font-medium text-stone-400 hover:text-red-600 hover:underline"
+							className="mt-3 text-xs font-medium text-stone-400 hover:text-red-600 hover:underline dark:text-stone-500 dark:hover:text-red-400"
 						>
 							Voortgang wissen
 						</button>
@@ -324,7 +326,7 @@ export function PlayClient({
 			<div className="flex items-center justify-between gap-4">
 				<Link
 					href="/"
-					className="text-sm font-medium text-stone-500 hover:text-stone-700"
+					className="text-sm font-medium text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
 				>
 					← Hoofdstukken
 				</Link>
@@ -338,25 +340,25 @@ export function PlayClient({
 						}}
 						aria-label={soundEnabled ? "Geluid uit" : "Geluid aan"}
 						title={soundEnabled ? "Geluid uit" : "Geluid aan"}
-						className="rounded-full bg-white p-1.5 text-stone-500 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-700"
+						className="rounded-full bg-white p-1.5 text-stone-500 ring-1 ring-stone-200 hover:bg-stone-50 hover:text-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-100"
 					>
 						<span aria-hidden className="text-sm leading-none">
 							{soundEnabled ? "🔊" : "🔇"}
 						</span>
 					</button>
-					<div className="text-sm font-medium text-stone-600">
+					<div className="text-sm font-medium text-stone-600 dark:text-stone-400">
 						{index + 1} / {total} • Score {score}
 					</div>
 				</div>
 			</div>
 			<ProgressBar current={index} total={total} />
-			<div className="flex items-center justify-between text-xs font-medium text-stone-500">
+			<div className="flex items-center justify-between text-xs font-medium text-stone-500 dark:text-stone-400">
 				{isTest ? (
-					<span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200">
+					<span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800">
 						Toets • L3–L5 • telt niet mee
 					</span>
 				) : (
-					<span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 ring-1 ring-violet-200">
+					<span className="rounded-full bg-violet-50 px-2.5 py-1 text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:ring-violet-800">
 						Beheersing: {liveStats.pct}%
 					</span>
 				)}
@@ -364,13 +366,13 @@ export function PlayClient({
 					<button
 						type="button"
 						onClick={handleReset}
-						className="hover:text-red-600 hover:underline"
+						className="hover:text-red-600 hover:underline dark:hover:text-red-400"
 					>
 						Reset voortgang
 					</button>
 				)}
 			</div>
-			<div className="rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-stone-200">
+			<div className="rounded-2xl bg-white p-5 sm:p-6 shadow-sm ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
 				<ExerciseView
 					key={`${current.itemKey}-L${current.level}-${index}`}
 					exercise={exercise}
@@ -385,7 +387,7 @@ export function PlayClient({
 					hideHint={!current.showHint}
 				/>
 			</div>
-			<div className="text-center text-xs text-stone-400">
+			<div className="text-center text-xs text-stone-400 dark:text-stone-500">
 				{chapter.language === "french" &&
 					"Tip: gebruik de accent-balk voor é è ê ë ç bij Franse antwoorden."}
 				{chapter.language === "greek" &&

@@ -2,9 +2,9 @@ import Link from "next/link";
 
 export default function NotFound() {
 	return (
-		<div className="min-h-dvh bg-stone-50 flex items-center justify-center p-5">
-			<div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200">
-				<h2 className="text-xl font-bold text-stone-900">
+		<div className="min-h-dvh bg-stone-50 flex items-center justify-center p-5 dark:bg-stone-950">
+			<div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
+				<h2 className="text-xl font-bold text-stone-900 dark:text-stone-50">
 					Hoofdstuk niet gevonden
 				</h2>
 				<Link

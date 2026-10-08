@@ -144,21 +144,27 @@ function MultipleChoiceExercise({
 							disabled={submitted}
 							onClick={() => !submitted && setSelected(opt)}
 							className={[
-								"rounded-xl border px-4 py-3 text-left text-[15px] font-medium text-stone-900 transition",
+								"rounded-xl border px-4 py-3 text-left text-[15px] font-medium text-stone-900 transition dark:text-stone-100",
 								!submitted && isSelected
-									? "border-sky-500 bg-sky-50 ring-1 ring-sky-500"
+									? "border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:border-sky-400 dark:bg-sky-950/60 dark:ring-sky-400"
 									: !submitted
-										? "border-stone-200 bg-white hover:bg-stone-50"
+										? "border-stone-200 bg-white hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:hover:bg-stone-800"
 										: showCorrect
-											? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500"
+											? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-400 dark:bg-emerald-950/60 dark:ring-emerald-400"
 											: showWrong
-												? "border-red-400 bg-red-50 ring-1 ring-red-400"
-												: "border-stone-200 bg-white opacity-60",
+												? "border-red-400 bg-red-50 ring-1 ring-red-400 dark:border-red-400 dark:bg-red-950/60 dark:ring-red-400"
+												: "border-stone-200 bg-white opacity-60 dark:border-stone-700 dark:bg-stone-900",
 							].join(" ")}
 						>
 							{opt}
-							{showCorrect && <span className="ml-2 text-emerald-600">✓</span>}
-							{showWrong && <span className="ml-2 text-red-600">✗</span>}
+							{showCorrect && (
+								<span className="ml-2 text-emerald-600 dark:text-emerald-400">
+									✓
+								</span>
+							)}
+							{showWrong && (
+								<span className="ml-2 text-red-600 dark:text-red-400">✗</span>
+							)}
 						</button>
 					);
 				})}
@@ -308,12 +314,12 @@ function TextInputExercise({
 					autoCapitalize="off"
 					spellCheck={false}
 					className={[
-						"w-full rounded-xl border bg-white px-4 py-3 text-[16px] font-medium text-stone-900 caret-sky-600 outline-none placeholder:text-stone-400 disabled:opacity-100 disabled:text-stone-900",
+						"w-full rounded-xl border bg-white px-4 py-3 text-[16px] font-medium text-stone-900 caret-sky-600 outline-none placeholder:text-stone-400 disabled:opacity-100 disabled:text-stone-900 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 dark:disabled:text-stone-100",
 						submitted
 							? correct
-								? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500"
-								: "border-red-400 bg-red-50 text-stone-900 ring-1 ring-red-400"
-							: "border-stone-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20",
+								? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500 dark:border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-100 dark:ring-emerald-400"
+								: "border-red-400 bg-red-50 text-stone-900 ring-1 ring-red-400 dark:border-red-400 dark:bg-red-950/60 dark:text-stone-100 dark:ring-red-400"
+							: "border-stone-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-stone-700 dark:focus:border-sky-400",
 					].join(" ")}
 				/>
 				{showMacronToolbar && !submitted && (
@@ -414,17 +420,17 @@ function ExerciseHeader({
 	return (
 		<div className="space-y-2">
 			<div className="flex flex-wrap items-center gap-2">
-				<div className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+				<div className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
 					{typeLabel}
 				</div>
 				{levelBadge && (
-					<span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-700 ring-1 ring-violet-200">
+					<span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/60 dark:text-violet-300 dark:ring-violet-800">
 						{levelBadge}
 					</span>
 				)}
 			</div>
-			<div className="rounded-xl bg-white p-4 ring-1 ring-stone-200">
-				<div className="text-lg font-semibold text-stone-900">
+			<div className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-700">
+				<div className="text-lg font-semibold text-stone-900 dark:text-stone-50">
 					{exercise.prompt}
 				</div>
 				{canSpeak && (
@@ -437,10 +443,12 @@ function ExerciseHeader({
 					</button>
 				)}
 				{exercise.type === "declension" && exercise.lemma && (
-					<div className="mt-1 text-sm text-stone-600">{exercise.lemma}</div>
+					<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+						{exercise.lemma}
+					</div>
 				)}
 				{exercise.type === "declension" && exercise.form && (
-					<div className="mt-1 inline rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200">
+					<div className="mt-1 inline rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800">
 						{exercise.form}
 					</div>
 				)}
@@ -477,21 +485,21 @@ function Feedback({
 			className={[
 				"rounded-xl p-4",
 				correct
-					? "bg-emerald-50 ring-1 ring-emerald-200"
-					: "bg-red-50 ring-1 ring-red-200",
+					? "bg-emerald-50 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:ring-emerald-800"
+					: "bg-red-50 ring-1 ring-red-200 dark:bg-red-950/40 dark:ring-red-800",
 			].join(" ")}
 		>
 			<div
 				className={
 					correct
-						? "font-semibold text-emerald-800"
-						: "font-semibold text-red-800"
+						? "font-semibold text-emerald-800 dark:text-emerald-300"
+						: "font-semibold text-red-800 dark:text-red-300"
 				}
 			>
 				{correct ? "✓ Correct!" : "✗ Niet correct"}
 			</div>
 			{correct && isTypo && (
-				<div className="mt-1 text-sm text-amber-700">
+				<div className="mt-1 text-sm text-amber-700 dark:text-amber-300">
 					Let op, typfoutje
 					{userInput ? (
 						<>
@@ -504,28 +512,32 @@ function Feedback({
 				</div>
 			)}
 			{correct && isAlternative && userInput && (
-				<div className="mt-1 text-sm text-emerald-700">
+				<div className="mt-1 text-sm text-emerald-700 dark:text-emerald-300">
 					Jouw antwoord <span className="font-semibold">“{userInput}”</span> is
 					ook correct. Volledig antwoord:{" "}
 					<span className="font-semibold">{answer}</span>
 				</div>
 			)}
 			{!correct && (
-				<div className="mt-1 text-sm text-stone-700">
+				<div className="mt-1 text-sm text-stone-700 dark:text-stone-300">
 					Correct antwoord: <span className="font-semibold">{answer}</span>
 				</div>
 			)}
 			{!correct && wrongLanguageHint && (
-				<div className="mt-1 text-sm font-medium text-amber-700">
+				<div className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-300">
 					⚠️ {wrongLanguageHint}
 				</div>
 			)}
 			{translation && (
-				<div className="mt-1 text-sm text-stone-600">
+				<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
 					Betekenis: <span className="font-semibold">{translation}</span>
 				</div>
 			)}
-			{hint && <div className="mt-1 text-sm text-stone-600">💡 {hint}</div>}
+			{hint && (
+				<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+					💡 {hint}
+				</div>
+			)}
 			<button
 				type="button"
 				onClick={onNext}

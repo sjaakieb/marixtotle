@@ -42,18 +42,29 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
 	themeColor: "#0284c7",
-	colorScheme: "light",
+	colorScheme: "light dark",
 	width: "device-width",
 	initialScale: 1,
 	maximumScale: 5,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+const themeScript = `(function(){try{var t=localStorage.getItem('marixtotle-theme');var s=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t==='dark'||(t!=='light'&&t!=='dark'&&s);if(d){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
+
+export default function RootLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	return (
 		<html
 			lang="nl"
+			suppressHydrationWarning
 			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
 		>
+			<head>
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline theme script, no user input — prevents dark-mode FOUC */}
+				<script dangerouslySetInnerHTML={{ __html: themeScript }} />
+			</head>
 			<body className="min-h-full flex flex-col">
 				{children}
 				<PWAInstallPrompt />

@@ -66,8 +66,8 @@ function LanguageTab({
 			className={[
 				"flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition",
 				active
-					? "bg-stone-900 text-white shadow"
-					: "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50",
+					? "bg-stone-900 text-white shadow dark:bg-stone-100 dark:text-stone-900"
+					: "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-800",
 			].join(" ")}
 		>
 			<span>{flag}</span>
@@ -75,7 +75,9 @@ function LanguageTab({
 			<span
 				className={[
 					"ml-1 rounded-full px-2 py-0.5 text-xs",
-					active ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600",
+					active
+						? "bg-white/20 text-white dark:bg-stone-900/10 dark:text-stone-900"
+						: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
 				].join(" ")}
 			>
 				{count}
@@ -128,8 +130,8 @@ export function ChapterBrowser({ chapters }: Props) {
 					className={[
 						"rounded-full px-4 py-2 text-sm font-semibold transition",
 						selected === "all"
-							? "bg-stone-900 text-white shadow"
-							: "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50",
+							? "bg-stone-900 text-white shadow dark:bg-stone-100 dark:text-stone-900"
+							: "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-800",
 					].join(" ")}
 				>
 					Alle talen
@@ -137,8 +139,8 @@ export function ChapterBrowser({ chapters }: Props) {
 						className={[
 							"ml-2 rounded-full px-2 py-0.5 text-xs",
 							selected === "all"
-								? "bg-white/20 text-white"
-								: "bg-stone-100 text-stone-600",
+								? "bg-white/20 text-white dark:bg-stone-900/10 dark:text-stone-900"
+								: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
 						].join(" ")}
 					>
 						{chapters.length}
@@ -171,13 +173,13 @@ export function ChapterBrowser({ chapters }: Props) {
 							<div key={lang.id}>
 								<div className="mb-3 flex items-center gap-2">
 									<span className="text-xl">{meta.flag}</span>
-									<h3 className="text-base font-bold text-stone-900">
+									<h3 className="text-base font-bold text-stone-900 dark:text-stone-50">
 										{meta.label}
 									</h3>
-									<span className="text-sm font-medium text-stone-500">
+									<span className="text-sm font-medium text-stone-500 dark:text-stone-400">
 										• {meta.description}
 									</span>
-									<span className="ml-auto text-xs font-medium text-stone-400">
+									<span className="ml-auto text-xs font-medium text-stone-400 dark:text-stone-500">
 										{langChapters.length} hoofdstuk
 										{langChapters.length !== 1 ? "ken" : ""}
 									</span>
@@ -201,7 +203,7 @@ export function ChapterBrowser({ chapters }: Props) {
 						<ChapterCard key={ch.id} chapter={ch} progress={progress[ch.id]} />
 					))}
 					{filtered.length === 0 && (
-						<div className="rounded-xl bg-white p-6 text-center text-sm text-stone-500 ring-1 ring-stone-200">
+						<div className="rounded-xl bg-white p-6 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:bg-stone-900 dark:text-stone-400 dark:ring-stone-800">
 							Geen hoofdstukken voor deze taal.
 						</div>
 					)}
@@ -221,12 +223,12 @@ function ChapterCard({
 	const meta = languageMeta[chapter.language ?? "latin"];
 	const hoverColor =
 		chapter.language === "french"
-			? "hover:border-blue-300 hover:bg-blue-50/50"
+			? "hover:border-blue-300 hover:bg-blue-50/50 dark:hover:border-blue-700 dark:hover:bg-blue-950/40"
 			: chapter.language === "english"
-				? "hover:border-emerald-300 hover:bg-emerald-50/50"
+				? "hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
 				: chapter.language === "greek"
-					? "hover:border-violet-300 hover:bg-violet-50/50"
-					: "hover:border-sky-300 hover:bg-sky-50/50";
+					? "hover:border-violet-300 hover:bg-violet-50/50 dark:hover:border-violet-700 dark:hover:bg-violet-950/40"
+					: "hover:border-sky-300 hover:bg-sky-50/50 dark:hover:border-sky-700 dark:hover:bg-sky-950/40";
 
 	const badgeColor =
 		chapter.language === "french"
@@ -246,39 +248,43 @@ function ChapterCard({
 
 	return (
 		<div
-			className={`group rounded-xl border border-stone-200 bg-white p-4 transition ${hoverColor}`}
+			className={`group rounded-xl border border-stone-200 bg-white p-4 transition dark:border-stone-800 dark:bg-stone-900 ${hoverColor}`}
 		>
 			<div className="flex items-start justify-between gap-4">
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
 						<span className="text-sm">{meta.flag}</span>
-						<span className="font-semibold text-stone-900">
+						<span className="font-semibold text-stone-900 dark:text-stone-50">
 							{chapter.title}
 						</span>
 					</div>
 					{chapter.description && (
-						<div className="mt-1 text-sm text-stone-600">
+						<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
 							{chapter.description}
 						</div>
 					)}
-					<div className="mt-2 text-xs font-medium text-stone-500">
+					<div className="mt-2 text-xs font-medium text-stone-500 dark:text-stone-400">
 						{chapter.exercises.length} oefeningen • {meta.description}
 						{hasVocab && ` • ${vocabCount} woorden`}
 					</div>
 					<div className="mt-2">
 						<div className="flex items-center justify-between text-[11px] font-semibold">
 							<span
-								className={showMastery ? "text-violet-700" : "text-stone-400"}
+								className={
+									showMastery
+										? "text-violet-700 dark:text-violet-300"
+										: "text-stone-400 dark:text-stone-500"
+								}
 							>
 								{showMastery ? `Beheersing ${stats.pct}%` : "Nog niet geoefend"}
 							</span>
 							{showMastery && (
-								<span className="text-stone-400">
+								<span className="text-stone-400 dark:text-stone-500">
 									{stats.mastered}/{stats.total} op L5
 								</span>
 							)}
 						</div>
-						<div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+						<div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
 							<div
 								className="h-full rounded-full bg-violet-500 transition-all"
 								style={{ width: `${stats.pct}%` }}
@@ -306,7 +312,7 @@ function ChapterCard({
 					{hasVocab && (
 						<Link
 							href={`/words/${chapter.id}`}
-							className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+							className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-700"
 						>
 							📋 Woordenlijst
 						</Link>

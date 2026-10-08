@@ -52,7 +52,7 @@ function SpeakButton({ text, lang }: { text: string; lang: string }) {
 			onClick={() => speak(text, lang)}
 			aria-label={`Uitspraak van “${text}” beluisteren`}
 			title="Uitspraak beluisteren"
-			className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-sm text-stone-400 ring-1 ring-transparent transition hover:bg-violet-50 hover:text-violet-700 hover:ring-violet-200 active:scale-95"
+			className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-sm text-stone-400 ring-1 ring-transparent transition hover:bg-violet-50 hover:text-violet-700 hover:ring-violet-200 active:scale-95 dark:text-stone-500 dark:hover:bg-violet-950/60 dark:hover:text-violet-300 dark:hover:ring-violet-800"
 		>
 			<span aria-hidden>🔊</span>
 		</button>
@@ -105,12 +105,12 @@ export function WordListClient({ chapter }: Props) {
 
 	if (total === 0) {
 		return (
-			<div className="rounded-xl bg-white p-6 text-center ring-1 ring-stone-200">
-				<div className="text-sm font-semibold text-stone-700">
+			<div className="rounded-xl bg-white p-6 text-center ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
+				<div className="text-sm font-semibold text-stone-700 dark:text-stone-200">
 					Geen woordenschat in dit hoofdstuk.
 				</div>
 				{hasDeclension && (
-					<div className="mt-1 text-sm text-stone-500">
+					<div className="mt-1 text-sm text-stone-500 dark:text-stone-400">
 						Dit hoofdstuk bevat alleen verbuiging/vervoeging oefeningen.
 					</div>
 				)}
@@ -121,10 +121,10 @@ export function WordListClient({ chapter }: Props) {
 	return (
 		<div className="space-y-4">
 			{/* Controls */}
-			<div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 sm:p-5">
+			<div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 sm:p-5 dark:bg-stone-900 dark:ring-stone-800">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex items-center gap-2 text-xs font-medium text-stone-600">
-						<span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700 ring-1 ring-sky-200">
+					<div className="flex items-center gap-2 text-xs font-medium text-stone-600 dark:text-stone-400">
+						<span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-800">
 							{total} unieke woorden
 						</span>
 					</div>
@@ -132,7 +132,7 @@ export function WordListClient({ chapter }: Props) {
 
 				<div className="mt-4 flex flex-col gap-3 sm:flex-row">
 					<div className="relative flex-1">
-						<span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-stone-400">
+						<span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-stone-400 dark:text-stone-500">
 							🔍
 						</span>
 						<input
@@ -140,20 +140,20 @@ export function WordListClient({ chapter }: Props) {
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							placeholder="Zoeken (NL of vertaling)…"
-							className="w-full rounded-xl border border-stone-300 bg-white py-2.5 pl-9 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none"
+							className="w-full rounded-xl border border-stone-300 bg-white py-2.5 pl-9 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500"
 						/>
 					</div>
 					<button
 						type="button"
 						onClick={() => setSortAsc((v) => !v)}
-						className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50"
+						className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-700"
 						title="Sorteren op Nederlands"
 					>
 						Sort: NL {sortAsc ? "A→Z" : "Z→A"}
 					</button>
 				</div>
 				{query && (
-					<div className="mt-3 text-xs text-stone-500">
+					<div className="mt-3 text-xs text-stone-500 dark:text-stone-400">
 						{showing} van {total} resultaten voor “{query}”
 						{showing === 0 && " — probeer een andere zoekterm"}
 					</div>
@@ -161,9 +161,9 @@ export function WordListClient({ chapter }: Props) {
 			</div>
 
 			{/* Desktop table */}
-			<div className="hidden overflow-hidden rounded-2xl bg-white ring-1 ring-stone-200 sm:block">
+			<div className="hidden overflow-hidden rounded-2xl bg-white ring-1 ring-stone-200 sm:block dark:bg-stone-900 dark:ring-stone-800">
 				<table className="w-full text-left text-sm">
-					<thead className="bg-stone-50 text-xs font-semibold uppercase tracking-wide text-stone-500">
+					<thead className="bg-stone-50 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:bg-stone-800 dark:text-stone-400">
 						<tr>
 							<th className="px-4 py-3 w-12">#</th>
 							<th className="px-4 py-3">Nederlands</th>
@@ -172,16 +172,19 @@ export function WordListClient({ chapter }: Props) {
 							<th className="px-4 py-3 w-1/4">Hint / info</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-stone-100">
+					<tbody className="divide-y divide-stone-100 dark:divide-stone-800">
 						{filtered.map((pair, i) => (
-							<tr key={pair.key} className="hover:bg-stone-50/70">
-								<td className="px-4 py-3 text-xs font-medium text-stone-400">
+							<tr
+								key={pair.key}
+								className="hover:bg-stone-50/70 dark:hover:bg-stone-800/60"
+							>
+								<td className="px-4 py-3 text-xs font-medium text-stone-400 dark:text-stone-500">
 									{i + 1}
 								</td>
-								<td className="px-4 py-3 font-medium text-stone-900">
+								<td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">
 									{pair.nl}
 								</td>
-								<td className="px-4 py-3 font-medium text-sky-700">
+								<td className="px-4 py-3 font-medium text-sky-700 dark:text-sky-300">
 									{pair.foreign}
 									{speechOK && (
 										<SpeakButton text={pair.foreign} lang={audioLang} />
@@ -192,27 +195,29 @@ export function WordListClient({ chapter }: Props) {
 										className={[
 											"inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ring-1",
 											levelOf(pair.key) >= 5
-												? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+												? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800"
 												: levelOf(pair.key) > 0
-													? "bg-violet-50 text-violet-700 ring-violet-200"
-													: "bg-stone-100 text-stone-400 ring-stone-200",
+													? "bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/60 dark:text-violet-300 dark:ring-violet-800"
+													: "bg-stone-100 text-stone-400 ring-stone-200 dark:bg-stone-800 dark:text-stone-400 dark:ring-stone-700",
 										].join(" ")}
 										title={`Niveau ${levelOf(pair.key)}/5`}
 									>
 										L{levelOf(pair.key)}/5
 									</span>
 								</td>
-								<td className="px-4 py-3 text-stone-600">
+								<td className="px-4 py-3 text-stone-600 dark:text-stone-400">
 									{pair.hint && (
 										<span className="text-xs italic">{pair.hint}</span>
 									)}
 									{pair.alternatives && pair.alternatives.length > 0 && (
-										<div className="mt-1 text-xs text-stone-500">
+										<div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
 											ook: {pair.alternatives.join(", ")}
 										</div>
 									)}
 									{!pair.hint && !pair.alternatives && (
-										<span className="text-stone-300">—</span>
+										<span className="text-stone-300 dark:text-stone-600">
+											—
+										</span>
 									)}
 								</td>
 							</tr>
@@ -220,7 +225,7 @@ export function WordListClient({ chapter }: Props) {
 					</tbody>
 				</table>
 				{filtered.length === 0 && (
-					<div className="p-8 text-center text-sm text-stone-500">
+					<div className="p-8 text-center text-sm text-stone-500 dark:text-stone-400">
 						Geen woorden gevonden.
 					</div>
 				)}
@@ -231,30 +236,30 @@ export function WordListClient({ chapter }: Props) {
 				{filtered.map((pair, i) => (
 					<div
 						key={pair.key}
-						className="rounded-xl bg-white p-4 ring-1 ring-stone-200"
+						className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800"
 					>
 						<div className="flex items-start justify-between gap-3">
-							<div className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+							<div className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">
 								#{i + 1} • NL ↔ {header.foreignShort}
 							</div>
-							<span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-500">
+							<span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-500 dark:bg-stone-800 dark:text-stone-300">
 								L{levelOf(pair.key)}/5
 							</span>
 						</div>
 						<div className="mt-2 grid grid-cols-2 gap-3">
 							<div>
-								<div className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+								<div className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
 									Nederlands
 								</div>
-								<div className="mt-1 text-sm font-semibold text-stone-900">
+								<div className="mt-1 text-sm font-semibold text-stone-900 dark:text-stone-100">
 									{pair.nl}
 								</div>
 							</div>
 							<div>
-								<div className="text-[11px] font-semibold uppercase tracking-wide text-sky-600">
+								<div className="text-[11px] font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400">
 									{header.foreignLabel}
 								</div>
-								<div className="mt-1 text-sm font-semibold text-sky-700">
+								<div className="mt-1 text-sm font-semibold text-sky-700 dark:text-sky-300">
 									{pair.foreign}
 									{speechOK && (
 										<SpeakButton text={pair.foreign} lang={audioLang} />
@@ -264,7 +269,7 @@ export function WordListClient({ chapter }: Props) {
 						</div>
 						{(pair.hint ||
 							(pair.alternatives && pair.alternatives.length > 0)) && (
-							<div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600 ring-1 ring-stone-100">
+							<div className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-600 ring-1 ring-stone-100 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700">
 								{pair.hint && <div>💡 {pair.hint}</div>}
 								{pair.alternatives && pair.alternatives.length > 0 && (
 									<div className={pair.hint ? "mt-1" : ""}>
@@ -276,14 +281,14 @@ export function WordListClient({ chapter }: Props) {
 					</div>
 				))}
 				{filtered.length === 0 && (
-					<div className="rounded-xl bg-white p-6 text-center text-sm text-stone-500 ring-1 ring-stone-200">
+					<div className="rounded-xl bg-white p-6 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:bg-stone-900 dark:text-stone-400 dark:ring-stone-800">
 						Geen woorden gevonden.
 					</div>
 				)}
 			</div>
 
 			{hasDeclension && (
-				<div className="rounded-xl bg-amber-50 p-4 text-xs text-amber-800 ring-1 ring-amber-200">
+				<div className="rounded-xl bg-amber-50 p-4 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800">
 					ℹ️ Dit hoofdstuk bevat naast woordenschat ook{" "}
 					{chapter.exercises.filter((e) => e.type === "declension").length}{" "}
 					verbuiging/vervoeging oefeningen — die staan niet in deze lijst.
