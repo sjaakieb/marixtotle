@@ -79,7 +79,7 @@ export function ThemeToggle() {
 			onClick={cycle}
 			aria-label={`${meta.label} — klik om te wisselen`}
 			title={`${meta.label} — klik om te wisselen`}
-			className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-base ring-1 ring-stone-200 transition hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-100 dark:ring-stone-700 dark:hover:bg-stone-700"
+			className="pixel-btn inline-flex h-10 w-10 shrink-0 items-center justify-center bg-white text-base dark:bg-stone-800 dark:text-stone-100"
 		>
 			<span aria-hidden>{meta.icon}</span>
 		</button>

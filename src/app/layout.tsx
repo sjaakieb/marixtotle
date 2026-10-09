@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Press_Start_2P, VT323 } from "next/font/google";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
@@ -12,6 +12,18 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
 	variable: "--font-geist-mono",
 	subsets: ["latin"],
+});
+
+const pixel = Press_Start_2P({
+	variable: "--font-pixel",
+	subsets: ["latin", "latin-ext"],
+	weight: "400",
+});
+
+const terminal = VT323({
+	variable: "--font-terminal",
+	subsets: ["latin", "latin-ext"],
+	weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -59,7 +71,7 @@ export default function RootLayout({
 		<html
 			lang="nl"
 			suppressHydrationWarning
-			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+			className={`${geistSans.variable} ${geistMono.variable} ${pixel.variable} ${terminal.variable} h-full antialiased`}
 		>
 			<head>
 				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline theme script, no user input — prevents dark-mode FOUC */}

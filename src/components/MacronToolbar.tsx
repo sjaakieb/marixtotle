@@ -10,8 +10,8 @@ type Props = {
 
 export function MacronToolbar({ onInsert, onToggle, showToggle }: Props) {
 	return (
-		<div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-stone-50 p-2 ring-1 ring-stone-200 dark:bg-stone-800 dark:ring-stone-700">
-			<span className="mr-1 text-xs font-medium text-stone-500 dark:text-stone-400">
+		<div className="flex flex-wrap items-center gap-1.5 border-[3px] border-stone-900 bg-stone-200 p-2 shadow-[4px_4px_0_0_var(--pixel-shadow)] dark:border-black dark:bg-stone-800">
+			<span className="mr-1 font-pixel text-[9px] text-stone-600 dark:text-stone-300">
 				Macrons:
 			</span>
 			{MACRONS_LOWER.map((c) => (
@@ -19,19 +19,19 @@ export function MacronToolbar({ onInsert, onToggle, showToggle }: Props) {
 					key={c}
 					type="button"
 					onClick={() => onInsert(c)}
-					className="min-w-9 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-stone-900 shadow-sm ring-1 ring-stone-200 hover:bg-stone-100 active:scale-95 dark:bg-stone-900 dark:text-stone-100 dark:ring-stone-700 dark:hover:bg-stone-700"
+					className="pixel-btn min-w-9 bg-white px-2.5 py-1.5 text-2xl text-stone-900 dark:bg-stone-900 dark:text-stone-100"
 					aria-label={`Voeg ${c} in`}
 				>
 					{c}
 				</button>
 			))}
-			<span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700" />
+			<span className="mx-1 h-6 w-1 bg-stone-900/20 dark:bg-stone-600" />
 			{MACRONS_UPPER.map((c) => (
 				<button
 					key={c}
 					type="button"
 					onClick={() => onInsert(c)}
-					className="min-w-9 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-stone-900 shadow-sm ring-1 ring-stone-200 hover:bg-stone-100 active:scale-95 dark:bg-stone-900 dark:text-stone-100 dark:ring-stone-700 dark:hover:bg-stone-700"
+					className="pixel-btn min-w-9 bg-white px-2.5 py-1.5 text-2xl text-stone-900 dark:bg-stone-900 dark:text-stone-100"
 					aria-label={`Voeg ${c} in`}
 				>
 					{c}
@@ -39,11 +39,11 @@ export function MacronToolbar({ onInsert, onToggle, showToggle }: Props) {
 			))}
 			{showToggle && onToggle && (
 				<>
-					<span className="mx-1 h-6 w-px bg-stone-200 dark:bg-stone-700" />
+					<span className="mx-1 h-6 w-1 bg-stone-900/20 dark:bg-stone-600" />
 					<button
 						type="button"
 						onClick={onToggle}
-						className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-800 dark:hover:bg-amber-950"
+						className="pixel-btn bg-amber-300 px-2.5 py-1.5 font-pixel text-[9px] text-amber-950"
 						title="Wissel klinker voor cursor (a ↔ ā)"
 					>
 						a ↔ ā

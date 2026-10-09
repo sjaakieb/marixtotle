@@ -64,20 +64,20 @@ function LanguageTab({
 			type="button"
 			onClick={onClick}
 			className={[
-				"flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition",
+				"pixel-btn flex items-center gap-2 px-3 py-2 font-pixel text-[10px]",
 				active
-					? "bg-stone-900 text-white shadow dark:bg-stone-100 dark:text-stone-900"
-					: "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-800",
+					? "bg-stone-900 text-lime-300 dark:bg-lime-400 dark:text-stone-900"
+					: "bg-white text-stone-700 dark:bg-stone-900 dark:text-stone-200",
 			].join(" ")}
 		>
-			<span>{flag}</span>
+			<span className="text-sm">{flag}</span>
 			<span>{label}</span>
 			<span
 				className={[
-					"ml-1 rounded-full px-2 py-0.5 text-xs",
+					"ml-1 px-1.5 py-0.5 font-terminal text-lg leading-none",
 					active
-						? "bg-white/20 text-white dark:bg-stone-900/10 dark:text-stone-900"
-						: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
+						? "bg-lime-400 text-stone-900 dark:bg-stone-900 dark:text-lime-300"
+						: "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
 				].join(" ")}
 			>
 				{count}
@@ -123,24 +123,24 @@ export function ChapterBrowser({ chapters }: Props) {
 	return (
 		<div className="space-y-6">
 			{/* Language menu */}
-			<div className="flex flex-wrap gap-2">
+			<div className="flex flex-wrap gap-3">
 				<button
 					type="button"
 					onClick={() => setSelected("all")}
 					className={[
-						"rounded-full px-4 py-2 text-sm font-semibold transition",
+						"pixel-btn px-3 py-2 font-pixel text-[10px]",
 						selected === "all"
-							? "bg-stone-900 text-white shadow dark:bg-stone-100 dark:text-stone-900"
-							: "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-800",
+							? "bg-stone-900 text-lime-300 dark:bg-lime-400 dark:text-stone-900"
+							: "bg-white text-stone-700 dark:bg-stone-900 dark:text-stone-200",
 					].join(" ")}
 				>
 					Alle talen
 					<span
 						className={[
-							"ml-2 rounded-full px-2 py-0.5 text-xs",
+							"ml-2 px-1.5 py-0.5 font-terminal text-lg leading-none",
 							selected === "all"
-								? "bg-white/20 text-white dark:bg-stone-900/10 dark:text-stone-900"
-								: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
+								? "bg-lime-400 text-stone-900 dark:bg-stone-900 dark:text-lime-300"
+								: "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
 						].join(" ")}
 					>
 						{chapters.length}
@@ -173,18 +173,18 @@ export function ChapterBrowser({ chapters }: Props) {
 							<div key={lang.id}>
 								<div className="mb-3 flex items-center gap-2">
 									<span className="text-xl">{meta.flag}</span>
-									<h3 className="text-base font-bold text-stone-900 dark:text-stone-50">
+									<h3 className="font-pixel text-[11px] text-stone-900 dark:text-stone-50">
 										{meta.label}
 									</h3>
-									<span className="text-sm font-medium text-stone-500 dark:text-stone-400">
+									<span className="text-xl text-stone-500 dark:text-stone-400">
 										• {meta.description}
 									</span>
-									<span className="ml-auto text-xs font-medium text-stone-400 dark:text-stone-500">
+									<span className="ml-auto font-terminal text-lg text-stone-400 dark:text-stone-500">
 										{langChapters.length} hoofdstuk
 										{langChapters.length !== 1 ? "ken" : ""}
 									</span>
 								</div>
-								<div className="grid gap-4">
+								<div className="grid gap-5">
 									{langChapters.map((ch) => (
 										<ChapterCard
 											key={ch.id}
@@ -198,12 +198,12 @@ export function ChapterBrowser({ chapters }: Props) {
 					})}
 				</div>
 			) : (
-				<div className="grid gap-4">
+				<div className="grid gap-5">
 					{filtered.map((ch) => (
 						<ChapterCard key={ch.id} chapter={ch} progress={progress[ch.id]} />
 					))}
 					{filtered.length === 0 && (
-						<div className="rounded-xl bg-white p-6 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:bg-stone-900 dark:text-stone-400 dark:ring-stone-800">
+						<div className="pixel-panel bg-white p-6 text-center text-xl text-stone-500 dark:bg-stone-900 dark:text-stone-400">
 							Geen hoofdstukken voor deze taal.
 						</div>
 					)}
@@ -221,23 +221,15 @@ function ChapterCard({
 	progress?: Record<string, number>;
 }) {
 	const meta = languageMeta[chapter.language ?? "latin"];
-	const hoverColor =
-		chapter.language === "french"
-			? "hover:border-blue-300 hover:bg-blue-50/50 dark:hover:border-blue-700 dark:hover:bg-blue-950/40"
-			: chapter.language === "english"
-				? "hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
-				: chapter.language === "greek"
-					? "hover:border-violet-300 hover:bg-violet-50/50 dark:hover:border-violet-700 dark:hover:bg-violet-950/40"
-					: "hover:border-sky-300 hover:bg-sky-50/50 dark:hover:border-sky-700 dark:hover:bg-sky-950/40";
 
 	const badgeColor =
 		chapter.language === "french"
-			? "bg-blue-600 hover:bg-blue-700"
+			? "bg-blue-600 hover:bg-blue-500"
 			: chapter.language === "english"
-				? "bg-emerald-600 hover:bg-emerald-700"
+				? "bg-emerald-600 hover:bg-emerald-500"
 				: chapter.language === "greek"
-					? "bg-violet-600 hover:bg-violet-700"
-					: "bg-sky-600 hover:bg-sky-700";
+					? "bg-violet-600 hover:bg-violet-500"
+					: "bg-sky-600 hover:bg-sky-500";
 
 	const items = getMasteryItems(chapter);
 	const vocabCount = items.filter((i) => i.kind === "vocab").length;
@@ -247,28 +239,26 @@ function ChapterCard({
 	const complete = isChapterComplete(items, progress ?? {});
 
 	return (
-		<div
-			className={`group rounded-xl border border-stone-200 bg-white p-4 transition dark:border-stone-800 dark:bg-stone-900 ${hoverColor}`}
-		>
+		<div className="pixel-panel group bg-white p-4 dark:bg-stone-900">
 			<div className="flex items-start justify-between gap-4">
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
 						<span className="text-sm">{meta.flag}</span>
-						<span className="font-semibold text-stone-900 dark:text-stone-50">
+						<span className="font-pixel text-[11px] leading-relaxed text-stone-900 dark:text-stone-50">
 							{chapter.title}
 						</span>
 					</div>
 					{chapter.description && (
-						<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+						<div className="mt-1 text-xl leading-tight text-stone-600 dark:text-stone-400">
 							{chapter.description}
 						</div>
 					)}
-					<div className="mt-2 text-xs font-medium text-stone-500 dark:text-stone-400">
+					<div className="mt-2 font-terminal text-lg leading-none text-stone-500 dark:text-stone-400">
 						{chapter.exercises.length} oefeningen • {meta.description}
 						{hasVocab && ` • ${vocabCount} woorden`}
 					</div>
-					<div className="mt-2">
-						<div className="flex items-center justify-between text-[11px] font-semibold">
+					<div className="mt-3">
+						<div className="flex items-center justify-between font-pixel text-[9px]">
 							<span
 								className={
 									showMastery
@@ -284,19 +274,19 @@ function ChapterCard({
 								</span>
 							)}
 						</div>
-						<div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+						<div className="mt-2 h-4 w-full border-2 border-stone-900 bg-stone-200 dark:border-black dark:bg-stone-800">
 							<div
-								className="h-full rounded-full bg-violet-500 transition-all"
+								className="pixel-progress-fill h-full bg-violet-500 transition-all"
 								style={{ width: `${stats.pct}%` }}
 							/>
 						</div>
 					</div>
 				</div>
-				<div className="flex shrink-0 flex-col items-end gap-2">
+				<div className="flex shrink-0 flex-col items-end gap-3">
 					{complete ? (
 						<Link
 							href={`/test/${chapter.id}`}
-							className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+							className="pixel-btn bg-emerald-600 px-3 py-2 font-pixel text-[10px] text-white"
 							title="Hoofdstuk beheerst — toets jezelf met 10 vragen op niveau 3–5"
 						>
 							✓ Toetsen →
@@ -304,7 +294,7 @@ function ChapterCard({
 					) : (
 						<Link
 							href={`/play/${chapter.id}`}
-							className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white ${badgeColor}`}
+							className={`pixel-btn px-3 py-2 font-pixel text-[10px] text-white ${badgeColor}`}
 						>
 							Oefenen →
 						</Link>
@@ -312,9 +302,9 @@ function ChapterCard({
 					{hasVocab && (
 						<Link
 							href={`/words/${chapter.id}`}
-							className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-700"
+							className="pixel-btn bg-white px-3 py-2 font-pixel text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							📋 Woordenlijst
+							📋 Woorden
 						</Link>
 					)}
 				</div>

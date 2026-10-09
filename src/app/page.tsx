@@ -4,17 +4,17 @@ import { chapters } from "@/content/chapters";
 
 export default function Home() {
 	return (
-		<div className="min-h-dvh bg-stone-50 dark:bg-stone-950">
+		<div className="bg-pixel-grid min-h-dvh bg-stone-100 dark:bg-stone-950">
 			<header className="mx-auto max-w-3xl px-5 py-6 sm:py-8">
-				<div className="flex items-center gap-3">
-					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 font-bold text-white">
-						M
+				<div className="flex items-center gap-4">
+					<div className="pixel-btn flex h-12 w-12 items-center justify-center bg-amber-400 font-pixel text-lg text-stone-900">
+						M!
 					</div>
 					<div>
-						<h1 className="text-xl font-extrabold tracking-tight text-stone-900 dark:text-stone-50">
+						<h1 className="font-pixel text-sm tracking-tight text-stone-900 sm:text-base dark:text-stone-50">
 							Marixtotle
 						</h1>
-						<p className="text-sm text-stone-600 dark:text-stone-400">
+						<p className="mt-2 text-xl leading-none text-stone-600 dark:text-stone-400">
 							Duolingo-variant voor huiswerk • Latijn • Frans • Engels • Grieks
 						</p>
 					</div>
@@ -25,11 +25,12 @@ export default function Home() {
 			</header>
 
 			<main className="mx-auto max-w-3xl px-5 pb-12">
-				<div className="rounded-2xl bg-white p-6 ring-1 ring-stone-200 sm:p-8 dark:bg-stone-900 dark:ring-stone-800">
-					<h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">
-						Kies een taal en hoofdstuk
+				<div className="pixel-panel bg-white p-6 sm:p-8 dark:bg-stone-900">
+					<h2 className="font-pixel text-xs leading-relaxed text-stone-900 dark:text-stone-50">
+						▶ Kies een taal en hoofdstuk
+						<span className="animate-pixel-blink">_</span>
 					</h2>
-					<p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+					<p className="mt-3 text-xl leading-snug text-stone-600 dark:text-stone-400">
 						Hoofdletters maken niet uit en een enkele tikfout wordt vergeven
 						(maar wel gemeld) — ook een ontbrekend accent. Gebruik de balk boven
 						het invoerveld voor speciale tekens.
@@ -40,9 +41,8 @@ export default function Home() {
 					</div>
 				</div>
 
-				<footer className="mt-6 text-center text-xs text-stone-400 dark:text-stone-500">
-					Geen accounts. Voortgang (niveau per woord) wordt lokaal in je browser
-					bewaard.
+				<footer className="mt-8 text-center font-pixel text-[10px] leading-relaxed text-stone-500 dark:text-stone-500">
+					Geen accounts • Voortgang blijft lokaal in je browser
 				</footer>
 			</main>
 		</div>

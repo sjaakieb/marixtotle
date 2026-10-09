@@ -144,16 +144,16 @@ function MultipleChoiceExercise({
 							disabled={submitted}
 							onClick={() => !submitted && setSelected(opt)}
 							className={[
-								"rounded-xl border px-4 py-3 text-left text-[15px] font-medium text-stone-900 transition dark:text-stone-100",
+								"pixel-btn w-full px-4 py-3 text-left text-2xl leading-tight",
 								!submitted && isSelected
-									? "border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:border-sky-400 dark:bg-sky-950/60 dark:ring-sky-400"
+									? "bg-sky-200 text-stone-900 dark:bg-sky-800 dark:text-stone-50"
 									: !submitted
-										? "border-stone-200 bg-white hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:hover:bg-stone-800"
+										? "bg-white text-stone-900 dark:bg-stone-900 dark:text-stone-100"
 										: showCorrect
-											? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-400 dark:bg-emerald-950/60 dark:ring-emerald-400"
+											? "bg-emerald-200 text-stone-900 dark:bg-emerald-800 dark:text-stone-50"
 											: showWrong
-												? "border-red-400 bg-red-50 ring-1 ring-red-400 dark:border-red-400 dark:bg-red-950/60 dark:ring-red-400"
-												: "border-stone-200 bg-white opacity-60 dark:border-stone-700 dark:bg-stone-900",
+												? "bg-red-200 text-stone-900 dark:bg-red-900 dark:text-stone-50"
+												: "bg-white text-stone-900 opacity-60 dark:bg-stone-900 dark:text-stone-100",
 							].join(" ")}
 						>
 							{opt}
@@ -174,9 +174,9 @@ function MultipleChoiceExercise({
 					type="button"
 					onClick={handleSubmit}
 					disabled={selected == null}
-					className="w-full rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed"
+					className="pixel-btn w-full bg-sky-600 px-6 py-4 font-pixel text-[11px] text-white hover:bg-sky-500 disabled:opacity-40"
 				>
-					Controleren
+					▶ Controleren
 				</button>
 			) : (
 				<Feedback
@@ -314,12 +314,12 @@ function TextInputExercise({
 					autoCapitalize="off"
 					spellCheck={false}
 					className={[
-						"w-full rounded-xl border bg-white px-4 py-3 text-[16px] font-medium text-stone-900 caret-sky-600 outline-none placeholder:text-stone-400 disabled:opacity-100 disabled:text-stone-900 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 dark:disabled:text-stone-100",
+						"w-full border-[3px] border-stone-900 bg-white px-4 py-3 text-2xl text-stone-900 caret-sky-600 shadow-[4px_4px_0_0_var(--pixel-shadow)] outline-none placeholder:text-stone-400 disabled:opacity-100 dark:border-black dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500",
 						submitted
 							? correct
-								? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500 dark:border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-100 dark:ring-emerald-400"
-								: "border-red-400 bg-red-50 text-stone-900 ring-1 ring-red-400 dark:border-red-400 dark:bg-red-950/60 dark:text-stone-100 dark:ring-red-400"
-							: "border-stone-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-stone-700 dark:focus:border-sky-400",
+								? "bg-emerald-100 dark:bg-emerald-950"
+								: "bg-red-100 dark:bg-red-950"
+							: "focus:bg-amber-50 dark:focus:bg-stone-900",
 					].join(" ")}
 				/>
 				{showMacronToolbar && !submitted && (
@@ -341,9 +341,9 @@ function TextInputExercise({
 					<button
 						type="submit"
 						disabled={value.trim() === ""}
-						className="w-full rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed"
+						className="pixel-btn w-full bg-sky-600 px-6 py-4 font-pixel text-[11px] text-white hover:bg-sky-500 disabled:opacity-40"
 					>
-						Controleren
+						▶ Controleren
 					</button>
 				) : (
 					<Feedback
@@ -420,35 +420,35 @@ function ExerciseHeader({
 	return (
 		<div className="space-y-2">
 			<div className="flex flex-wrap items-center gap-2">
-				<div className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+				<div className="font-pixel text-[9px] text-stone-500 dark:text-stone-400">
 					{typeLabel}
 				</div>
 				{levelBadge && (
-					<span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/60 dark:text-violet-300 dark:ring-violet-800">
+					<span className="border-2 border-violet-700 bg-violet-200 px-2 py-0.5 font-pixel text-[9px] text-violet-900 dark:border-violet-400 dark:bg-violet-900 dark:text-violet-200">
 						{levelBadge}
 					</span>
 				)}
 			</div>
-			<div className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-700">
-				<div className="text-lg font-semibold text-stone-900 dark:text-stone-50">
+			<div className="pixel-screen p-4">
+				<div className="text-3xl leading-tight">
+					<span className="mr-2 text-lime-600 dark:text-lime-500">❯</span>
 					{exercise.prompt}
+					<span className="animate-pixel-blink">▌</span>
 				</div>
 				{canSpeak && (
 					<button
 						type="button"
 						onClick={() => speak(audioText as string, speechLang)}
-						className="mt-3 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+						className="pixel-btn mt-3 inline-flex items-center gap-2 bg-violet-600 px-4 py-2.5 font-pixel text-[10px] text-white hover:bg-violet-500"
 					>
 						<span aria-hidden>🔊</span> Beluister
 					</button>
 				)}
 				{exercise.type === "declension" && exercise.lemma && (
-					<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-						{exercise.lemma}
-					</div>
+					<div className="mt-2 text-2xl opacity-80">{exercise.lemma}</div>
 				)}
 				{exercise.type === "declension" && exercise.form && (
-					<div className="mt-1 inline rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800">
+					<div className="mt-2 inline-block border-2 border-amber-500 bg-amber-900 px-2 py-1 font-pixel text-[9px] text-amber-300">
 						{exercise.form}
 					</div>
 				)}
@@ -483,58 +483,58 @@ function Feedback({
 	return (
 		<div
 			className={[
-				"rounded-xl p-4",
+				"border-4 p-4 shadow-[4px_4px_0_0_var(--pixel-shadow)]",
 				correct
-					? "bg-emerald-50 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:ring-emerald-800"
-					: "bg-red-50 ring-1 ring-red-200 dark:bg-red-950/40 dark:ring-red-800",
+					? "border-emerald-700 bg-emerald-100 dark:border-emerald-400 dark:bg-emerald-950"
+					: "border-red-700 bg-red-100 dark:border-red-400 dark:bg-red-950",
 			].join(" ")}
 		>
 			<div
 				className={
 					correct
-						? "font-semibold text-emerald-800 dark:text-emerald-300"
-						: "font-semibold text-red-800 dark:text-red-300"
+						? "font-pixel text-[11px] text-emerald-800 dark:text-emerald-300"
+						: "font-pixel text-[11px] text-red-800 dark:text-red-300"
 				}
 			>
-				{correct ? "✓ Correct!" : "✗ Niet correct"}
+				{correct ? "★ Correct! +100" : "✗ Niet correct"}
 			</div>
 			{correct && isTypo && (
-				<div className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+				<div className="mt-2 text-xl text-amber-700 dark:text-amber-300">
 					Let op, typfoutje
 					{userInput ? (
 						<>
-							: <span className="font-semibold">“{userInput}”</span> →{" "}
+							: <span className="font-bold">“{userInput}”</span> →{" "}
 						</>
 					) : (
 						": "
 					)}
-					<span className="font-semibold">{answer}</span>
+					<span className="font-bold">{answer}</span>
 				</div>
 			)}
 			{correct && isAlternative && userInput && (
-				<div className="mt-1 text-sm text-emerald-700 dark:text-emerald-300">
-					Jouw antwoord <span className="font-semibold">“{userInput}”</span> is
-					ook correct. Volledig antwoord:{" "}
-					<span className="font-semibold">{answer}</span>
+				<div className="mt-2 text-xl text-emerald-700 dark:text-emerald-300">
+					Jouw antwoord <span className="font-bold">“{userInput}”</span> is ook
+					correct. Volledig antwoord:{" "}
+					<span className="font-bold">{answer}</span>
 				</div>
 			)}
 			{!correct && (
-				<div className="mt-1 text-sm text-stone-700 dark:text-stone-300">
-					Correct antwoord: <span className="font-semibold">{answer}</span>
+				<div className="mt-2 text-xl text-stone-700 dark:text-stone-300">
+					Correct antwoord: <span className="font-bold">{answer}</span>
 				</div>
 			)}
 			{!correct && wrongLanguageHint && (
-				<div className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-300">
+				<div className="mt-2 text-xl font-bold text-amber-700 dark:text-amber-300">
 					⚠️ {wrongLanguageHint}
 				</div>
 			)}
 			{translation && (
-				<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-					Betekenis: <span className="font-semibold">{translation}</span>
+				<div className="mt-2 text-xl text-stone-600 dark:text-stone-400">
+					Betekenis: <span className="font-bold">{translation}</span>
 				</div>
 			)}
 			{hint && (
-				<div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+				<div className="mt-2 text-xl text-stone-600 dark:text-stone-400">
 					💡 {hint}
 				</div>
 			)}
@@ -544,10 +544,10 @@ function Feedback({
 				// biome-ignore lint/a11y/noAutofocus: intentional - focus next button to allow Enter to continue
 				autoFocus
 				className={[
-					"mt-3 w-full rounded-xl px-6 py-3 font-semibold text-white",
+					"pixel-btn mt-4 w-full px-6 py-3 font-pixel text-[11px] text-white",
 					correct
-						? "bg-emerald-600 hover:bg-emerald-700"
-						: "bg-sky-600 hover:bg-sky-700",
+						? "bg-emerald-600 hover:bg-emerald-500"
+						: "bg-sky-600 hover:bg-sky-500",
 				].join(" ")}
 			>
 				{isLast ? "Bekijk resultaat →" : "Volgende →"}

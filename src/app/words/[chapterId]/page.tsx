@@ -25,39 +25,39 @@ export default async function WordsPage({
 	).length;
 
 	return (
-		<div className="min-h-dvh bg-stone-50 dark:bg-stone-950">
+		<div className="bg-pixel-grid min-h-dvh bg-stone-100 dark:bg-stone-950">
 			<div className="mx-auto max-w-3xl px-5 py-6">
 				<div className="mb-4 flex items-start justify-between gap-4">
 					<div>
 						<div className="flex items-center gap-2">
 							{lang && <span>{lang.flag}</span>}
-							<span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+							<span className="font-pixel text-[9px] text-stone-500 dark:text-stone-400">
 								{lang?.label ?? chapter.language} • Woordenlijst
 							</span>
 						</div>
-						<h1 className="text-lg font-bold text-stone-900 dark:text-stone-50">
+						<h1 className="mt-2 font-pixel text-xs leading-relaxed text-stone-900 dark:text-stone-50">
 							{chapter.title}
 						</h1>
 						{chapter.description && (
-							<p className="text-sm text-stone-600 dark:text-stone-400">
+							<p className="mt-1 text-xl text-stone-600 dark:text-stone-400">
 								{chapter.description}
 							</p>
 						)}
-						<div className="mt-1 text-xs font-medium text-stone-500 dark:text-stone-400">
+						<div className="mt-1 font-terminal text-xl text-stone-500 dark:text-stone-400">
 							{vocabCount} unieke woorden
 						</div>
 					</div>
-					<div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+					<div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
 						<ThemeToggle />
 						<Link
 							href={`/play/${chapter.id}`}
-							className="rounded-full bg-sky-600 px-4 py-1.5 text-center text-xs font-semibold text-white hover:bg-sky-700"
+							className="pixel-btn bg-sky-600 px-4 py-1.5 text-center font-pixel text-[9px] text-white hover:bg-sky-500"
 						>
 							Oefenen →
 						</Link>
 						<Link
 							href="/"
-							className="rounded-full bg-white px-3 py-1.5 text-center text-xs font-semibold text-stone-700 ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-200 dark:ring-stone-700 dark:hover:bg-stone-700"
+							className="pixel-btn bg-white px-3 py-1.5 text-center font-pixel text-[9px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
 							← Overzicht
 						</Link>
