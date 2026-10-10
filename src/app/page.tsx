@@ -16,6 +16,7 @@ export default function Home() {
 						</h1>
 						<p className="mt-2 text-xl leading-none text-stone-600 dark:text-stone-400">
 							Duolingo-variant voor huiswerk • Latijn • Frans • Engels • Grieks
+							• Nederlands
 						</p>
 					</div>
 					<div className="ml-auto">
@@ -31,9 +32,10 @@ export default function Home() {
 						<span className="animate-pixel-blink">_</span>
 					</h2>
 					<p className="mt-3 text-xl leading-snug text-stone-600 dark:text-stone-400">
-						Hoofdletters maken niet uit en een enkele tikfout wordt vergeven
-						(maar wel gemeld) — ook een ontbrekend accent. Gebruik de balk boven
-						het invoerveld voor speciale tekens.
+						Hoofdletters maken niet uit en een enkele tikfout wordt meestal
+						vergeven (maar wel gemeld) — ook een ontbrekend accent. Alleen
+						bij Nederlandse werkwoordspelling telt elke letter. Gebruik de
+						balk boven het invoerveld voor speciale tekens.
 					</p>
 
 					<div className="mt-6">

@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const languageIdSchema = z.enum(["latin", "french", "english", "greek"]);
+export const languageIdSchema = z.enum([
+	"latin",
+	"french",
+	"english",
+	"greek",
+	"dutch",
+]);
 
 export type LanguageId = z.infer<typeof languageIdSchema>;
 

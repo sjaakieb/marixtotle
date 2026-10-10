@@ -1,4 +1,6 @@
 import { type Chapter, chaptersSchema } from "@/lib/schema";
+import { chapter as dutchDeelwoorden2 } from "./dutch/deelwoorden2";
+import { chapter as dutchWerkwoorden1 } from "./dutch/werkwoorden1";
 import { chapter as english1 } from "./english/beginner1";
 import { chapter as englishLesson1 } from "./english/lesson1";
 import { chapter as frenchJours } from "./french/days";
@@ -9,8 +11,8 @@ import { chapter as frenchVocabulaireC } from "./french/vocabulaireC";
 import { chapter as frenchVocabulaireE } from "./french/vocabulaireE";
 import { chapter as frenchVocabulaireF } from "./french/vocabulaireF";
 import { chapter as frenchVocabulaireG } from "./french/vocabulaireG";
-import { chapter as greek1 } from "./greek/beginner1";
 import { chapter as greekAlphabet } from "./greek/alphabet";
+import { chapter as greek1 } from "./greek/beginner1";
 import { chapter as greekClassical1 } from "./greek/classical1";
 import { chapter as greekTransliteration } from "./greek/transliteration";
 import { chapter as latin2 } from "./latin/minerva2";
@@ -18,6 +20,8 @@ import { chapter as latin2a } from "./latin/minerva2a";
 import { chapter as latin2b } from "./latin/minerva2b";
 
 const rawChapters = [
+	dutchWerkwoorden1,
+	dutchDeelwoorden2,
 	latin2b,
 	latin2a,
 	latin2,
@@ -52,4 +56,5 @@ export const chaptersByLanguage = {
 	french: getChaptersByLanguage("french"),
 	english: getChaptersByLanguage("english"),
 	greek: getChaptersByLanguage("greek"),
+	dutch: getChaptersByLanguage("dutch"),
 } as const;

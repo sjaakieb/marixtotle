@@ -31,6 +31,14 @@ export const LANGUAGES = [
 		description: "Nederlands ↔ Grieks",
 		color: "violet",
 	},
+	{
+		id: "dutch",
+		label: "Nederlands",
+		nativeLabel: "Nederlands",
+		flag: "🇳🇱",
+		description: "Werkwoordspelling",
+		color: "amber",
+	},
 ] as const;
 
 export type LanguageId = (typeof LANGUAGES)[number]["id"];

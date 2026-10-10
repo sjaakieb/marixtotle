@@ -39,6 +39,7 @@ const languageHeaders: Record<
 	french: { foreignLabel: "Frans", foreignShort: "FR" },
 	english: { foreignLabel: "Engels", foreignShort: "EN" },
 	greek: { foreignLabel: "Grieks", foreignShort: "EL" },
+	dutch: { foreignLabel: "Nederlands", foreignShort: "NL" },
 };
 
 type Props = {

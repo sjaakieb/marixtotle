@@ -2,12 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { insertAtCursor, toggleMacronBeforeCursor } from "@/lib/macron";
-import {
-	detectWrongLanguage,
-	gradeExercise,
-	isExerciseCorrect,
-	normalize,
-} from "@/lib/matcher";
+import { detectWrongLanguage, gradeExercise, normalize } from "@/lib/matcher";
 import type { Exercise, LanguageId } from "@/lib/schema";
 import {
 	getLanguageFromDirection,
@@ -46,6 +41,12 @@ type Props = {
 	hideHint?: boolean;
 	/** when set, show a "report inaccuracy" button after answering */
 	report?: Omit<ReportContext, "userInput">;
+	/**
+	 * Strict grading (Dutch spelling drills): no typo leniency — every
+	 * deviation from the answer is wrong. Normalization
+	 * (case/whitespace/punctuation) still applies.
+	 */
+	strict?: boolean;
 };
 
 export function ExerciseView({
@@ -60,6 +61,7 @@ export function ExerciseView({
 	translation,
 	hideHint,
 	report,
+	strict,
 }: Props) {
 	const isMCQ = !!exercise.options && exercise.options.length > 0;
 	return isMCQ ? (
@@ -74,6 +76,7 @@ export function ExerciseView({
 			audioLang={audioLang}
 			hideHint={hideHint}
 			report={report}
+			strict={strict}
 		/>
 	) : (
 		<TextInputExercise
@@ -88,6 +91,7 @@ export function ExerciseView({
 			translation={translation}
 			hideHint={hideHint}
 			report={report}
+			strict={strict}
 		/>
 	);
 }
@@ -102,6 +106,7 @@ function MultipleChoiceExercise({
 	audioLang,
 	hideHint,
 	report,
+	strict,
 }: Props) {
 	const [selected, setSelected] = useState<string | null>(null);
 	const [submitted, setSubmitted] = useState(false);
@@ -110,7 +115,9 @@ function MultipleChoiceExercise({
 		[exercise.options],
 	);
 	const correct =
-		selected != null ? isExerciseCorrect(selected, exercise) : false;
+		selected != null
+			? gradeExercise(selected, exercise, { strict }) !== "wrong"
+			: false;
 	const isAlternative =
 		submitted &&
 		correct &&
@@ -217,6 +224,7 @@ function TextInputExercise({
 	translation,
 	hideHint,
 	report,
+	strict,
 }: Props) {
 	const [value, setValue] = useState("");
 	const [submitted, setSubmitted] = useState(false);
@@ -234,7 +242,7 @@ function TextInputExercise({
 	const showMacronToolbar = needsMacronLegacy && inferredLanguage === "latin";
 	const effectiveLanguage: LanguageId =
 		(inferredLanguage as LanguageId) ?? "latin";
-	const grade = gradeExercise(value, exercise);
+	const grade = gradeExercise(value, exercise, { strict });
 	const correct = grade !== "wrong";
 	const isTypo = submitted && grade === "typo";
 	// Wrong language? Explain instead of a bare "Niet correct" (e.g. typed
@@ -372,10 +380,10 @@ function TextInputExercise({
 						userInput={value}
 					/>
 				)}
-				{submitted && report && (
-					<ReportButton report={{ ...report, userInput: value }} />
-				)}
 			</form>
+			{submitted && report && (
+				<ReportButton report={{ ...report, userInput: value }} />
+			)}
 		</div>
 	);
 }
@@ -390,6 +398,8 @@ function getLanguageLabel(lang: LanguageId): string {
 			return "Engelse";
 		case "greek":
 			return "Griekse";
+		case "dutch":
+			return "Nederlandse";
 		default:
 			return "";
 	}

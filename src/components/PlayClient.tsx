@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+	FLAT_ROUND_SIZE,
+	nextFlatOffset,
+	takeFlatRound,
+} from "@/lib/flat-rounds";
+import {
 	applyResult,
 	averageLevel,
 	buildSession,
@@ -26,6 +31,21 @@ import { ExerciseView } from "./ExerciseView";
 import { ProgressBar } from "./ProgressBar";
 
 const SESSION_SIZE = 10;
+
+/** Flat practice (Dutch spelling chapters): every exercise once, typing
+ *  only — no L1–L5 mastery levels and no stored progress. */
+export function isFlatPracticeChapter(chapter: Pick<Chapter, "language">) {
+	return chapter.language === "dutch";
+}
+
+function shuffleExercises<T>(arr: T[]): T[] {
+	const a = [...arr];
+	for (let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
+	}
+	return a;
+}
 
 function questionToExercise(
 	q: GeneratedQuestion,
@@ -87,6 +107,7 @@ export function PlayClient({
 	mode?: "practice" | "test";
 }) {
 	const isTest = mode === "test";
+	const isFlat = isFlatPracticeChapter(chapter);
 	const items = useMemo(() => getMasteryItems(chapter), [chapter]);
 	const [levels, setLevels] = useState<ChapterProgress>({});
 	const [loaded, setLoaded] = useState(false);
@@ -95,7 +116,27 @@ export function PlayClient({
 	const [done, setDone] = useState(false);
 	const [results, setResults] = useState<boolean[]>([]);
 	const [soundEnabled, setSoundEnabledState] = useState(true);
-
+	// Flat-mode rotation: one full shuffle, served in rounds of 10 without
+	// repetition; reshuffles only after every exercise has been asked.
+	// Wrong answers can be retried in a bonus round (bonusItems) without
+	// disturbing the rotation.
+	const [flatCycle, setFlatCycle] = useState(0);
+	const [flatOffset, setFlatOffset] = useState(0);
+	const [bonusItems, setBonusItems] = useState<Exercise[] | null>(null);
+	const [roundSeq, setRoundSeq] = useState(0);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: flatCycle intentionally retriggers the shuffle after a full rotation
+	const flatOrder = useMemo(
+		() => shuffleExercises(chapter.exercises),
+		[chapter, flatCycle],
+	);
+	const roundItems = useMemo(
+		() => bonusItems ?? takeFlatRound(flatOrder, flatOffset, FLAT_ROUND_SIZE),
+		[bonusItems, flatOrder, flatOffset],
+	);
+	const cycleComplete =
+		bonusItems === null &&
+		flatOrder.length > 0 &&
+		flatOffset + roundItems.length >= flatOrder.length;
 	useEffect(() => {
 		setSoundEnabledState(isSoundEnabled());
 		setLevels(loadChapterProgress(chapter.id));
@@ -123,7 +164,7 @@ export function PlayClient({
 		[items, isTest],
 	);
 	useEffect(() => {
-		if (!loaded) return;
+		if (!loaded || isFlat) return;
 		// Drop stored keys for items that no longer exist (content edits),
 		// otherwise orphaned levels inflate the mastery % past 100.
 		const start = pruneChapterProgress(
@@ -132,7 +173,7 @@ export function PlayClient({
 		);
 		setLevels(start);
 		resetSessionState(start);
-	}, [loaded, chapter.id, items, resetSessionState]);
+	}, [loaded, chapter.id, items, resetSessionState, isFlat]);
 
 	const current = session[index];
 	const total = session.length;
@@ -140,6 +181,13 @@ export function PlayClient({
 	const startPct = getChapterStats(items, sessionStartLevels).pct;
 
 	const handleResult = (correct: boolean) => {
+		if (isFlat) {
+			// Flat practice never touches stored levels — just score it.
+			if (!roundItems[index]) return;
+			setResults((r) => [...r, correct]);
+			if (correct) setScore((s) => s + 1);
+			return;
+		}
 		if (!current) return;
 		// An exam never changes stored levels — it only reports a grade.
 		if (!isTest) {
@@ -153,7 +201,8 @@ export function PlayClient({
 	};
 
 	const handleNext = () => {
-		if (index + 1 >= total) {
+		const end = isFlat ? roundItems.length : total;
+		if (index + 1 >= end) {
 			setDone(true);
 		} else {
 			setIndex((i) => i + 1);
@@ -161,6 +210,22 @@ export function PlayClient({
 	};
 
 	const handleRestart = () => {
+		if (isFlat) {
+			const next = nextFlatOffset(
+				flatOffset,
+				FLAT_ROUND_SIZE,
+				flatOrder.length,
+			);
+			if (next.wrapped) setFlatCycle((c) => c + 1);
+			setFlatOffset(next.offset);
+			setBonusItems(null);
+			setRoundSeq((s) => s + 1);
+			setIndex(0);
+			setScore(0);
+			setDone(false);
+			setResults([]);
+			return;
+		}
 		const fresh = loadChapterProgress(chapter.id);
 		setLevels(fresh);
 		resetSessionState(fresh);
@@ -177,6 +242,53 @@ export function PlayClient({
 		setLevels({});
 		resetSessionState({});
 	};
+
+	const toggleSound = () => {
+		const next = !soundEnabled;
+		setSoundEnabled(next);
+		setSoundEnabledState(next);
+	};
+
+	const handleRetryMistakes = (mistakes: Exercise[]) => {
+		if (!isFlat || mistakes.length === 0) return;
+		setBonusItems(shuffleExercises(mistakes));
+		setRoundSeq((s) => s + 1);
+		setIndex(0);
+		setScore(0);
+		setDone(false);
+		setResults([]);
+	};
+
+	if (isFlat) {
+		if (!loaded) {
+			return (
+				<div className="pixel-panel mx-auto max-w-xl bg-white p-8 text-center text-2xl text-stone-500 dark:bg-stone-900 dark:text-stone-400">
+					Sessie laden<span className="animate-pixel-blink">…</span>
+				</div>
+			);
+		}
+		return (
+			<FlatPracticeView
+				chapter={chapter}
+				items={roundItems}
+				roundKey={`${roundSeq}`}
+				offset={flatOffset}
+				totalCount={flatOrder.length}
+				cycleComplete={cycleComplete}
+				isBonusRound={bonusItems !== null}
+				index={index}
+				score={score}
+				done={done}
+				results={results}
+				soundEnabled={soundEnabled}
+				onToggleSound={toggleSound}
+				onResult={handleResult}
+				onNext={handleNext}
+				onRestart={handleRestart}
+				onRetryMistakes={handleRetryMistakes}
+			/>
+		);
+	}
 
 	if (!loaded || session.length === 0) {
 		if (loaded && !isTest && items.length > 0) {
@@ -385,6 +497,7 @@ export function PlayClient({
 					audioLang={audioLang}
 					translation={current.translation}
 					hideHint={!current.showHint}
+					strict={chapter.language === "dutch"}
 					report={{
 						chapterId: chapter.id,
 						itemKey: current.itemKey,
@@ -404,7 +517,203 @@ export function PlayClient({
 					"Tip: gebruik de macron-balk voor ā ē ī ō ū bij Latijnse antwoorden."}
 				{chapter.language === "english" &&
 					"Tip: type je antwoord – geen speciale tekens nodig."}
+				{chapter.language === "dutch" &&
+					"Tip: let op d/t, sterke werkwoorden en voltooide deelwoorden."}
 				{!chapter.language && "Tip: gebruik de balk voor speciale tekens."}
+			</div>
+		</div>
+	);
+}
+
+function FlatPracticeView({
+	chapter,
+	items,
+	roundKey,
+	offset,
+	totalCount,
+	cycleComplete,
+	isBonusRound,
+	index,
+	score,
+	done,
+	results,
+	soundEnabled,
+	onToggleSound,
+	onResult,
+	onNext,
+	onRestart,
+	onRetryMistakes,
+}: {
+	chapter: Chapter;
+	items: Exercise[];
+	roundKey: string;
+	offset: number;
+	totalCount: number;
+	cycleComplete: boolean;
+	isBonusRound: boolean;
+	index: number;
+	score: number;
+	done: boolean;
+	results: boolean[];
+	soundEnabled: boolean;
+	onToggleSound: () => void;
+	onResult: (correct: boolean) => void;
+	onNext: () => void;
+	onRestart: () => void;
+	onRetryMistakes: (mistakes: Exercise[]) => void;
+}) {
+	const total = items.length;
+
+	if (items.length === 0) {
+		return (
+			<div className="pixel-panel mx-auto max-w-xl bg-white p-8 text-center dark:bg-stone-900">
+				<div className="text-2xl text-stone-700 dark:text-stone-200">
+					Geen oefenitems in dit hoofdstuk.
+				</div>
+				<Link
+					href="/"
+					className="mt-4 inline-block text-2xl text-sky-600 hover:underline"
+				>
+					← Terug naar overzicht
+				</Link>
+			</div>
+		);
+	}
+
+	if (done) {
+		const grade = sessionGrade(score, total);
+		const mistakes = items.filter((_, i) => results[i] === false);
+		return (
+			<div className="mx-auto max-w-xl space-y-6">
+				<div className="pixel-panel bg-white p-8 text-center dark:bg-stone-900">
+					<div className="text-4xl">
+						{grade >= 8 ? "🏆" : grade >= 5.5 ? "💪" : "📚"}
+					</div>
+					<h2 className="mt-4 font-pixel text-sm leading-relaxed text-stone-900 dark:text-stone-50">
+						★ Les afgerond! ★
+					</h2>
+					<p className="mt-2 text-2xl text-stone-600 dark:text-stone-400">
+						{chapter.title}
+					</p>
+					<div className="mt-6">
+						<div className="font-pixel text-2xl text-sky-600 dark:text-sky-400">
+							{score}/{total}
+						</div>
+						<div className="mt-3 text-2xl text-stone-500 dark:text-stone-400">
+							Cijfer:{" "}
+							<span className="font-bold text-stone-800 dark:text-stone-100">
+								{grade.toFixed(1)}
+							</span>
+						</div>
+						<div className="mt-1 text-xl text-stone-500 dark:text-stone-400">
+							{isBonusRound
+								? `Herhaalronde: ${total} ${total === 1 ? "fout" : "fouten"}`
+								: `Opgaven ${offset + 1}–${offset + total} van ${totalCount}`}
+						</div>
+						{cycleComplete && (
+							<div className="mt-4 border-4 border-emerald-700 bg-emerald-100 p-3 text-xl text-emerald-800 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-200">
+								★ Alle opgaven gehad — de volgende ronde wordt opnieuw
+								gehusseld.
+							</div>
+						)}
+						<div className="mt-4">
+							<ProgressBar current={score} total={total} />
+						</div>
+					</div>
+					<div className="mt-6 grid grid-cols-10 gap-1.5">
+						{results.map((r, i) => (
+							<div
+								// biome-ignore lint/suspicious/noArrayIndexKey: results is append-only, indices stable for session
+								key={i}
+								className={[
+									"h-3 border-2 border-stone-900 dark:border-black",
+									r ? "bg-emerald-500" : "bg-red-400",
+								].join(" ")}
+								title={r ? "correct" : "fout"}
+							/>
+						))}
+					</div>
+					<div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
+						{mistakes.length > 0 && (
+							<button
+								type="button"
+								onClick={() => onRetryMistakes(mistakes)}
+								className="pixel-btn bg-amber-500 px-6 py-3 font-pixel text-[11px] text-white hover:bg-amber-400"
+							>
+								Oefen je {mistakes.length}{" "}
+								{mistakes.length === 1 ? "fout" : "fouten"} opnieuw →
+							</button>
+						)}
+						<button
+							type="button"
+							onClick={onRestart}
+							className="pixel-btn bg-sky-600 px-6 py-3 font-pixel text-[11px] text-white hover:bg-sky-500"
+						>
+							{cycleComplete ? "Opnieuw husselen →" : "Volgende 10 →"}
+						</button>
+						<Link
+							href="/"
+							className="pixel-btn bg-white px-6 py-3 font-pixel text-[11px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
+						>
+							Ander hoofdstuk
+						</Link>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	const exercise = items[index];
+	if (!exercise) return null;
+
+	return (
+		<div className="mx-auto max-w-xl space-y-4">
+			<div className="flex items-center justify-between gap-4">
+				<Link
+					href="/"
+					className="text-2xl text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
+				>
+					← Hoofdstukken
+				</Link>
+				<div className="flex items-center gap-3">
+					<button
+						type="button"
+						onClick={onToggleSound}
+						aria-label={soundEnabled ? "Geluid uit" : "Geluid aan"}
+						title={soundEnabled ? "Geluid uit" : "Geluid aan"}
+						className="pixel-btn bg-white p-1.5 text-stone-500 dark:bg-stone-800 dark:text-stone-300"
+					>
+						<span aria-hidden className="text-sm leading-none">
+							{soundEnabled ? "🔊" : "🔇"}
+						</span>
+					</button>
+					<div className="font-pixel text-[10px] text-stone-600 dark:text-stone-400">
+						{index + 1}/{total} • Score {score}
+					</div>
+				</div>
+			</div>
+			<ProgressBar current={index} total={total} />
+			<div className="pixel-panel bg-white p-5 sm:p-6 dark:bg-stone-900">
+				<ExerciseView
+					key={`${roundKey}-${exercise.id}-${index}`}
+					exercise={exercise}
+					onResult={onResult}
+					onNext={onNext}
+					isLast={index + 1 === total}
+					language={chapter.language}
+					strict={chapter.language === "dutch"}
+					report={{
+						chapterId: chapter.id,
+						itemKey: exercise.id,
+						exerciseId: exercise.id,
+						level: null,
+						prompt: exercise.prompt,
+						answer: exercise.answer,
+					}}
+				/>
+			</div>
+			<div className="text-center font-terminal text-xl text-stone-400 dark:text-stone-500">
+				Tip: let op d/t, sterke werkwoorden en voltooide deelwoorden.
 			</div>
 		</div>
 	);

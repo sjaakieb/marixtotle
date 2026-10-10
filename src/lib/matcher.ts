@@ -66,6 +66,7 @@ export function gradeExercise(
 		direction?: string;
 		wrongAnswers?: string[];
 	},
+	opts?: { strict?: boolean },
 ): Grade {
 	const dutch = exercise.direction?.endsWith("->nl") ?? false;
 	const normInput = canonicalForGrade(userInput, dutch);
@@ -76,6 +77,11 @@ export function gradeExercise(
 	const normCandidates = candidates.map((c) => canonicalForGrade(c, dutch));
 	// Exact match always wins (even if contradictorily denylisted).
 	if (normCandidates.some((c) => c === normInput)) return "exact";
+	// Strict mode (Dutch spelling drills): every deviation is a reasoning
+	// error, not a typo — e.g. "wachten" for "wachtten" or "fietste" for
+	// "fietst" must be wrong. Normalization (case/whitespace/punctuation)
+	// above still applies, only typo leniency is disabled.
+	if (opts?.strict) return "wrong";
 	// Authored denylist overrules typo leniency. Compared accent-insensitively
 	// so "laeti" stays wrong however it is accented/capitalized.
 	if (

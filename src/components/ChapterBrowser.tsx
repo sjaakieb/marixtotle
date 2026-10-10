@@ -44,6 +44,12 @@ const languageMeta: Record<
 		description: "Nederlands ↔ Grieks",
 		color: "violet",
 	},
+	dutch: {
+		label: "Nederlands",
+		flag: "🇳🇱",
+		description: "Werkwoordspelling",
+		color: "amber",
+	},
 };
 
 function LanguageTab({
@@ -229,14 +235,19 @@ function ChapterCard({
 				? "bg-emerald-600 hover:bg-emerald-500"
 				: chapter.language === "greek"
 					? "bg-violet-600 hover:bg-violet-500"
-					: "bg-sky-600 hover:bg-sky-500";
+					: chapter.language === "dutch"
+						? "bg-amber-600 hover:bg-amber-500"
+						: "bg-sky-600 hover:bg-sky-500";
 
 	const items = getMasteryItems(chapter);
 	const vocabCount = items.filter((i) => i.kind === "vocab").length;
 	const hasVocab = vocabCount > 0;
 	const stats = getChapterStats(items, progress ?? {});
-	const showMastery = stats.sum > 0;
-	const complete = isChapterComplete(items, progress ?? {});
+	// Flat practice chapters (Dutch spelling) track no mastery levels:
+	// every exercise is asked once, typing only.
+	const isFlat = chapter.language === "dutch";
+	const showMastery = !isFlat && stats.sum > 0;
+	const complete = !isFlat && isChapterComplete(items, progress ?? {});
 
 	return (
 		<div className="pixel-panel group bg-white p-4 dark:bg-stone-900">
@@ -266,7 +277,11 @@ function ChapterCard({
 										: "text-stone-400 dark:text-stone-500"
 								}
 							>
-								{showMastery ? `Beheersing ${stats.pct}%` : "Nog niet geoefend"}
+								{isFlat
+									? "Rondes van 10 • typen"
+									: showMastery
+										? `Beheersing ${stats.pct}%`
+										: "Nog niet geoefend"}
 							</span>
 							{showMastery && (
 								<span className="text-stone-400 dark:text-stone-500">
@@ -274,12 +289,14 @@ function ChapterCard({
 								</span>
 							)}
 						</div>
-						<div className="mt-2 h-4 w-full border-2 border-stone-900 bg-stone-200 dark:border-black dark:bg-stone-800">
-							<div
-								className="pixel-progress-fill h-full bg-violet-500 transition-all"
-								style={{ width: `${stats.pct}%` }}
-							/>
-						</div>
+						{!isFlat && (
+							<div className="mt-2 h-4 w-full border-2 border-stone-900 bg-stone-200 dark:border-black dark:bg-stone-800">
+								<div
+									className="pixel-progress-fill h-full bg-violet-500 transition-all"
+									style={{ width: `${stats.pct}%` }}
+								/>
+							</div>
+						)}
 					</div>
 				</div>
 				<div className="flex shrink-0 flex-col items-end gap-3">

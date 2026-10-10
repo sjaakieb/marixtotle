@@ -13,6 +13,8 @@ export function getSpeechLang(language: LanguageId | string): string {
 			return "el-GR";
 		case "latin":
 			return "it-IT";
+		case "dutch":
+			return "nl-NL";
 		default:
 			return "nl-NL";
 	}

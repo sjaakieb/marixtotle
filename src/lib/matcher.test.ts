@@ -257,6 +257,43 @@ describe("gradeExercise with wrongAnswers denylist", () => {
 	});
 });
 
+describe("gradeExercise strict mode (Dutch spelling drills)", () => {
+	it("accepts exact answers and alternatives", () => {
+		const ex = { answer: "woei", alternatives: ["waaide"] };
+		expect(gradeExercise("woei", ex, { strict: true })).toBe("exact");
+		expect(gradeExercise("waaide", ex, { strict: true })).toBe("exact");
+	});
+	it("keeps normalization (case/whitespace/punctuation) but kills typo leniency", () => {
+		const ex = { answer: "landt" };
+		expect(gradeExercise("Landt", ex, { strict: true })).toBe("exact");
+		expect(gradeExercise("  landt  ", ex, { strict: true })).toBe("exact");
+		expect(gradeExercise("lande", ex, { strict: true })).toBe("wrong");
+		expect(gradeExercise("land", ex, { strict: true })).toBe("wrong");
+	});
+	it("grades conjugation errors wrong instead of typo", () => {
+		// Without strict these are all forgiven as "typo".
+		const pairs: [string, string][] = [
+			["wachten", "wachtten"], // infinitive for past plural
+			["wachtte", "wachtten"], // wrong number
+			["fietste", "fietst"], // past for present
+			["stopte", "stopt"], // past for present
+			["lacht", "lachte"], // present for past
+			["ontdekt", "ontdekte"], // participle-like for past
+			["gebeurt", "gebeurd"], // present for voltooid deelwoord
+			["bereidt", "bereid"], // present for voltooid deelwoord
+		];
+		for (const [input, answer] of pairs) {
+			expect(gradeExercise(input, { answer }), `${input}/${answer}`).toBe(
+				"typo",
+			);
+			expect(
+				gradeExercise(input, { answer }, { strict: true }),
+				`${input}/${answer} strict`,
+			).toBe("wrong");
+		}
+	});
+});
+
 describe("detectWrongLanguage", () => {
 	const audioEx = {
 		answer: "je préfère",
