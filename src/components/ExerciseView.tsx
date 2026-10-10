@@ -18,6 +18,7 @@ import { playFail, playSuccess } from "@/lib/sounds";
 import { getSpeechLang, isSpeechSupported, speak } from "@/lib/speech";
 import { LanguageToolbar } from "./LanguageToolbar";
 import { MacronToolbar } from "./MacronToolbar";
+import { ReportButton, type ReportContext } from "./ReportButton";
 
 function shuffle<T>(arr: T[]): T[] {
 	const a = [...arr];
@@ -43,6 +44,8 @@ type Props = {
 	translation?: string;
 	/** declension L5 hides the hint for a bare recall test */
 	hideHint?: boolean;
+	/** when set, show a "report inaccuracy" button after answering */
+	report?: Omit<ReportContext, "userInput">;
 };
 
 export function ExerciseView({
@@ -56,6 +59,7 @@ export function ExerciseView({
 	audioLang,
 	translation,
 	hideHint,
+	report,
 }: Props) {
 	const isMCQ = !!exercise.options && exercise.options.length > 0;
 	return isMCQ ? (
@@ -69,6 +73,7 @@ export function ExerciseView({
 			audioText={audioText}
 			audioLang={audioLang}
 			hideHint={hideHint}
+			report={report}
 		/>
 	) : (
 		<TextInputExercise
@@ -82,6 +87,7 @@ export function ExerciseView({
 			audioLang={audioLang}
 			translation={translation}
 			hideHint={hideHint}
+			report={report}
 		/>
 	);
 }
@@ -95,6 +101,7 @@ function MultipleChoiceExercise({
 	audioText,
 	audioLang,
 	hideHint,
+	report,
 }: Props) {
 	const [selected, setSelected] = useState<string | null>(null);
 	const [submitted, setSubmitted] = useState(false);
@@ -189,6 +196,11 @@ function MultipleChoiceExercise({
 					userInput={selected ?? undefined}
 				/>
 			)}
+			{submitted && report && (
+				<ReportButton
+					report={{ ...report, userInput: selected ?? undefined }}
+				/>
+			)}
 		</div>
 	);
 }
@@ -204,6 +216,7 @@ function TextInputExercise({
 	audioLang,
 	translation,
 	hideHint,
+	report,
 }: Props) {
 	const [value, setValue] = useState("");
 	const [submitted, setSubmitted] = useState(false);
@@ -358,6 +371,9 @@ function TextInputExercise({
 						wrongLanguageHint={wrongLanguageHint}
 						userInput={value}
 					/>
+				)}
+				{submitted && report && (
+					<ReportButton report={{ ...report, userInput: value }} />
 				)}
 			</form>
 		</div>

@@ -385,6 +385,14 @@ export function PlayClient({
 					audioLang={audioLang}
 					translation={current.translation}
 					hideHint={!current.showHint}
+					report={{
+						chapterId: chapter.id,
+						itemKey: current.itemKey,
+						exerciseId: exercise.id,
+						level: current.level,
+						prompt: exercise.prompt,
+						answer: exercise.answer,
+					}}
 				/>
 			</div>
 			<div className="text-center font-terminal text-xl text-stone-400 dark:text-stone-500">

@@ -4,3 +4,6 @@ node_modules
 .gitignore
 README.md
 .tmp
+data/
+*.db
+.env*.local
