@@ -3,6 +3,9 @@ FROM node:24-alpine AS base
 
 FROM base AS deps
 WORKDIR /app
+# better-sqlite3 ships no prebuilt binary for node:24-alpine, so it compiles
+# from source via node-gyp (needs Python + a C++ toolchain, deps stage only).
+RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json ./
 RUN npm ci
 
