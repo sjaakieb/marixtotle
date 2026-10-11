@@ -47,13 +47,19 @@ export const ZOOM_LERP_IN = 0.08;
 export const ZOOM_LERP_UIT = 0.18;
 
 // --- Vliegnatuurkunde ---
-/** Frames tot volle stuwkracht (~1,5s gasrespons). */
-export const STUW_FRAMES = 90;
-/** Versnelling toetsen / slepen per frame bij volle stuwkracht. */
+// Alle snelheden gelden per 1/60s-tik; de loop schaalt ze met de echte
+// frametijd (zie fly-fysica.ts), dus 20fps voelt als 120fps.
+/** Seconden tot volle stuwkracht (~1,5s gasrespons; was 90 frames). */
+export const STUW_SECONDEN = 1.5;
+/** Versnelling toetsen / slepen per tik bij volle stuwkracht. */
 export const VERSNELLING_TOETS = 0.15;
 export const VERSNELLING_SLEEP = 0.004;
-/** Demping per frame (uitglijden). */
+/** Demping per tik (uitglijden). */
 export const DEMPING = 0.94;
+/** Demping per tik tijdens de pauze na landen. */
+export const PAUZE_DEMPING = 0.96;
+/** Camera volgt de heli met deze fractie per tik. */
+export const CAMERA_VOLG = 0.12;
 /** Topsnelheid schaalt mee met zoom, met deze vloer (fractie van leveltopsnelheid). */
 export const SNELHEID_ZOOM_VLOER = 0.1;
 

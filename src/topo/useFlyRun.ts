@@ -4,6 +4,7 @@
 // leven in Marixtotle al als normale opgaven.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cancelSpeech, speak } from "@/lib/speech";
+import { dempFaktor, frameStap, volgFaktor } from "./fly-fysica";
 import type { Camera, HeliState, Reveal } from "./fly-map";
 import {
 	WERELD_HOOGTE as H,
@@ -28,6 +29,7 @@ import {
 } from "./fly-sounds";
 import { getBest, setBest } from "./fly-storage";
 import {
+	CAMERA_VOLG,
 	DEMPING,
 	DICHTBIJ_AAN,
 	DICHTBIJ_UIT,
@@ -39,11 +41,12 @@ import {
 	heliTijdVoorLevel,
 	heliZoom,
 	LANDINGS_RADIUS_SCHERM_PX,
+	PAUZE_DEMPING,
 	PAUZE_LANDING_MS,
 	SNELHEID_ZOOM_VLOER,
 	STRAF_MIN_REST,
 	STRAF_SECONDEN,
-	STUW_FRAMES,
+	STUW_SECONDEN,
 	VERSNELLING_SLEEP,
 	VERSNELLING_TOETS,
 	VRIJSTELLING_CLUSTER_PX,
@@ -116,7 +119,12 @@ interface Engine {
 	drag: { doen: boolean; x: number; y: number };
 	dichtbij: boolean;
 	diep: boolean;
-	thrustFrames: number;
+	/** Seconden volle stuwkracht opgebouwd (gasrespons, tijd-gebaseerd). */
+	thrustSecs: number;
+	/** Tijdstempel van het vorige fysica-frame (null = nog niet gestart). */
+	lastT: number | null;
+	/** Huidige fysica-stap in 1/60s-tikken (ook rotor-animatie). */
+	stap: number;
 	pauzeer: boolean;
 	vrijgesteld: Set<number>;
 	bezochtVerkeerd: Set<number>;
@@ -151,7 +159,9 @@ function nieuweEngine(settings: FlyInstellingen, items: FlyItem[]): Engine {
 		drag: { doen: false, x: 0, y: 0 },
 		dichtbij: false,
 		diep: false,
-		thrustFrames: 0,
+		thrustSecs: 0,
+		lastT: null,
+		stap: 1,
 		pauzeer: false,
 		vrijgesteld: new Set(),
 		bezochtVerkeerd: new Set(),
@@ -250,7 +260,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 		const ctx = mapCtx(e.map);
 		const mctx = mapCtx(e.mini);
 		if (!ctx || !mctx || !e.map || !e.mini) return;
-		e.frame++;
+		e.frame += e.stap;
 		renderFly(ctx, e.map, mctx, e.mini, {
 			steden: e.reeks,
 			cam: e.cam,
@@ -342,24 +352,29 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 			const tot = Date.now() + ms;
 			e.pauzeer = true;
 			if (e.raf) cancelAnimationFrame(e.raf);
-			const stap = (): void => {
+			const pauzeLoop = (t: number): void => {
 				if (!e.pauzeer) return;
-				e.heli.vx *= 0.96;
-				e.heli.vy *= 0.96;
-				e.heli.x = Math.max(4, Math.min(W - 4, e.heli.x + e.heli.vx));
-				e.heli.y = Math.max(4, Math.min(H - 4, e.heli.y + e.heli.vy));
-				e.cam.cx += (e.heli.x - e.cam.cx) * 0.12;
-				e.cam.cy += (e.heli.y - e.cam.cy) * 0.12;
+				const f = frameStap(t, e.lastT);
+				e.lastT = f.laatste;
+				const s = f.stap;
+				e.stap = s;
+				e.heli.vx *= dempFaktor(PAUZE_DEMPING, s);
+				e.heli.vy *= dempFaktor(PAUZE_DEMPING, s);
+				e.heli.x = Math.max(4, Math.min(W - 4, e.heli.x + e.heli.vx * s));
+				e.heli.y = Math.max(4, Math.min(H - 4, e.heli.y + e.heli.vy * s));
+				const vk = volgFaktor(CAMERA_VOLG, s);
+				e.cam.cx += (e.heli.x - e.cam.cx) * vk;
+				e.cam.cy += (e.heli.y - e.cam.cy) * vk;
 				clampCam();
 				tekenVlieg();
 				if (Date.now() < tot) {
-					e.raf = requestAnimationFrame(stap);
+					e.raf = requestAnimationFrame(pauzeLoop);
 				} else {
 					e.pauzeer = false;
 					daarna();
 				}
 			};
-			e.raf = requestAnimationFrame(stap);
+			e.raf = requestAnimationFrame(pauzeLoop);
 		},
 		[clampCam, tekenVlieg],
 	);
@@ -417,7 +432,8 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 				clampCam();
 				e.dichtbij = false;
 				e.diep = false;
-				e.thrustFrames = 0;
+				e.thrustSecs = 0;
+				e.lastT = null;
 			}
 			e.tijdMax = heliTijdVoorLevel(level);
 			e.tijdOver = e.tijdMax;
@@ -490,8 +506,13 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 			}, 100);
 
 			if (e.raf) cancelAnimationFrame(e.raf);
-			const loop = (): void => {
+			const loop = (t: number): void => {
 				if (!e.timer) return;
+				// Fysica-stap in 1/60s-tikken: identiek spelgevoel op elke framerate.
+				const f = frameStap(t, e.lastT);
+				e.lastT = f.laatste;
+				const s = f.stap;
+				e.stap = s;
 				const sp = heliSnelheid(level);
 				const geeftGas = Boolean(
 					e.keys.ArrowLeft ||
@@ -505,20 +526,23 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 						e.drag.doen,
 				);
 				if (geeftGas)
-					e.thrustFrames = Math.min(STUW_FRAMES, e.thrustFrames + 1);
-				else e.thrustFrames = 0;
-				const stuw = Math.min(1, e.thrustFrames / STUW_FRAMES);
-				if (e.keys.ArrowLeft || e.keys.a) e.heli.vx -= VERSNELLING_TOETS * stuw;
+					e.thrustSecs = Math.min(STUW_SECONDEN, e.thrustSecs + s / 60);
+				else e.thrustSecs = 0;
+				const stuw = Math.min(1, e.thrustSecs / STUW_SECONDEN);
+				if (e.keys.ArrowLeft || e.keys.a)
+					e.heli.vx -= VERSNELLING_TOETS * stuw * s;
 				if (e.keys.ArrowRight || e.keys.d)
-					e.heli.vx += VERSNELLING_TOETS * stuw;
-				if (e.keys.ArrowUp || e.keys.w) e.heli.vy -= VERSNELLING_TOETS * stuw;
-				if (e.keys.ArrowDown || e.keys.s) e.heli.vy += VERSNELLING_TOETS * stuw;
+					e.heli.vx += VERSNELLING_TOETS * stuw * s;
+				if (e.keys.ArrowUp || e.keys.w)
+					e.heli.vy -= VERSNELLING_TOETS * stuw * s;
+				if (e.keys.ArrowDown || e.keys.s)
+					e.heli.vy += VERSNELLING_TOETS * stuw * s;
 				if (e.drag.doen) {
-					e.heli.vx += (e.drag.x - e.heli.x) * VERSNELLING_SLEEP * stuw;
-					e.heli.vy += (e.drag.y - e.heli.y) * VERSNELLING_SLEEP * stuw;
+					e.heli.vx += (e.drag.x - e.heli.x) * VERSNELLING_SLEEP * stuw * s;
+					e.heli.vy += (e.drag.y - e.heli.y) * VERSNELLING_SLEEP * stuw * s;
 				}
-				e.heli.vx *= DEMPING;
-				e.heli.vy *= DEMPING;
+				e.heli.vx *= dempFaktor(DEMPING, s);
+				e.heli.vy *= dempFaktor(DEMPING, s);
 				const effMax =
 					sp *
 					Math.min(
@@ -530,8 +554,8 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 					e.heli.vx *= effMax / v;
 					e.heli.vy *= effMax / v;
 				}
-				e.heli.x = Math.max(4, Math.min(W - 4, e.heli.x + e.heli.vx));
-				e.heli.y = Math.max(4, Math.min(H - 4, e.heli.y + e.heli.vy));
+				e.heli.x = Math.max(4, Math.min(W - 4, e.heli.x + e.heli.vx * s));
+				e.heli.y = Math.max(4, Math.min(H - 4, e.heli.y + e.heli.vy * s));
 				let swx = 0;
 				let swy = 0;
 				if (e.keys.ArrowLeft || e.keys.a) swx -= 1;
@@ -566,10 +590,11 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 						? ZOOM_DIEP
 						: ZOOM_DICHTBIJ;
 				const lerpStap = doelZoom < e.cam.zoom ? ZOOM_LERP_UIT : ZOOM_LERP_IN;
-				e.cam.zoom += (doelZoom - e.cam.zoom) * lerpStap;
+				e.cam.zoom += (doelZoom - e.cam.zoom) * volgFaktor(lerpStap, s);
 				if (Math.abs(doelZoom - e.cam.zoom) < 0.02) e.cam.zoom = doelZoom;
-				e.cam.cx += (e.heli.x - e.cam.cx) * 0.12;
-				e.cam.cy += (e.heli.y - e.cam.cy) * 0.12;
+				const vk = volgFaktor(CAMERA_VOLG, s);
+				e.cam.cx += (e.heli.x - e.cam.cx) * vk;
+				e.cam.cy += (e.heli.y - e.cam.cy) * vk;
 				clampCam();
 				tekenVlieg();
 				const p = project(item.lat, item.lon);
@@ -621,7 +646,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 				}
 				e.raf = requestAnimationFrame(loop);
 			};
-			loop();
+			loop(performance.now());
 		},
 		[clampCam, spreek, tekenVlieg, updateHud, volgende, zetTijd],
 	);
