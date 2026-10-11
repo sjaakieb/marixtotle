@@ -4,12 +4,27 @@ import { jwtVerify, SignJWT } from "jose";
 export const SESSION_COOKIE = "marixtotle_admin";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const SESSION_ISSUER = "marixtotle-admin";
+export const SESSION_SECRET_MIN_LENGTH = 32;
+
+/**
+ * Session-secret health check: null when usable, otherwise the problem.
+ * Used for precise error messages (missing vs. too short) and boot logging.
+ */
+export function sessionSecretError(): "missing" | "too-short" | null {
+	const secret = process.env.SESSION_SECRET;
+	if (!secret) return "missing";
+	if (secret.length < SESSION_SECRET_MIN_LENGTH) return "too-short";
+	return null;
+}
 
 function getSecret(): Uint8Array {
 	const secret = process.env.SESSION_SECRET;
-	if (!secret || secret.length < 32) {
+	if (!secret) {
+		throw new Error("SESSION_SECRET is not set");
+	}
+	if (secret.length < SESSION_SECRET_MIN_LENGTH) {
 		throw new Error(
-			"SESSION_SECRET must be set to at least 32 characters for admin sessions.",
+			`SESSION_SECRET must be at least ${SESSION_SECRET_MIN_LENGTH} characters (got ${secret.length})`,
 		);
 	}
 	return new TextEncoder().encode(secret);

@@ -6,6 +6,7 @@ import {
 	isLockedOut,
 	recordFailedLogin,
 	sessionCookieHeader,
+	sessionSecretError,
 	signSession,
 	verifyPassword,
 } from "@/lib/admin-auth";
@@ -80,8 +81,13 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (e) {
 		if (e instanceof Error && e.message.includes("SESSION_SECRET")) {
+			const tooShort = sessionSecretError() === "too-short";
 			return Response.json(
-				{ error: "Serverconfiguratie ontbreekt (SESSION_SECRET)." },
+				{
+					error: tooShort
+						? "Serverconfiguratie ongeldig (SESSION_SECRET moet minimaal 32 tekens zijn)."
+						: "Serverconfiguratie ontbreekt (SESSION_SECRET is niet ingesteld).",
+				},
 				{ status: 500 },
 			);
 		}
