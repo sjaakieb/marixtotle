@@ -50,6 +50,15 @@ export default async function PlayPage({
 								📋 Woorden
 							</Link>
 						)}
+						{chapter.language === "topo" && (
+							<Link
+								href={`/fly/${chapter.id}`}
+								className="pixel-btn bg-teal-600 px-3 py-1.5 font-pixel text-[9px] text-white hover:bg-teal-500"
+								title="Vlieg met de helikopter naar de gevraagde stad"
+							>
+								🚁 Vliegen
+							</Link>
+						)}
 						<Link
 							href="/"
 							className="pixel-btn bg-white px-3 py-1.5 font-pixel text-[9px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"

@@ -146,7 +146,7 @@ export function ChapterBrowser({ chapters }: Props) {
 							: "bg-white text-stone-700 dark:bg-stone-900 dark:text-stone-200",
 					].join(" ")}
 				>
-					Alle talen
+					Alle vakken
 					<span
 						className={[
 							"ml-2 px-1.5 py-0.5 font-terminal text-lg leading-none",
@@ -192,8 +192,8 @@ export function ChapterBrowser({ chapters }: Props) {
 										• {meta.description}
 									</span>
 									<span className="ml-auto font-terminal text-lg text-stone-400 dark:text-stone-500">
-										{langChapters.length} hoofdstuk
-										{langChapters.length !== 1 ? "ken" : ""}
+										{langChapters.length} onderwerp
+										{langChapters.length !== 1 ? "en" : ""}
 									</span>
 								</div>
 								<div className="grid gap-5">
@@ -216,7 +216,7 @@ export function ChapterBrowser({ chapters }: Props) {
 					))}
 					{filtered.length === 0 && (
 						<div className="pixel-panel bg-white p-6 text-center text-xl text-stone-500 dark:bg-stone-900 dark:text-stone-400">
-							Geen hoofdstukken voor deze taal.
+							Geen onderwerpen voor dit vak.
 						</div>
 					)}
 				</div>
@@ -315,7 +315,7 @@ function ChapterCard({
 						<Link
 							href={`/test/${chapter.id}`}
 							className="pixel-btn bg-emerald-600 px-3 py-2 font-pixel text-[10px] text-white"
-							title="Hoofdstuk beheerst — toets jezelf met 10 vragen op niveau 3–5"
+							title="Onderwerp beheerst — toets jezelf met 10 vragen op niveau 3–5"
 						>
 							✓ Toetsen →
 						</Link>
@@ -333,6 +333,15 @@ function ChapterCard({
 							className="pixel-btn bg-white px-3 py-2 font-pixel text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
 							{topoCount > 0 ? "📋 Leren" : "📋 Woorden"}
+						</Link>
+					)}
+					{topoCount > 0 && (
+						<Link
+							href={`/fly/${chapter.id}`}
+							className="pixel-btn bg-teal-600 px-3 py-2 font-pixel text-[10px] text-white hover:bg-teal-500"
+							title="Vlieg met de helikopter naar de gevraagde stad — telt niet mee voor de beheersing"
+						>
+							🚁 Vliegen
 						</Link>
 					)}
 				</div>

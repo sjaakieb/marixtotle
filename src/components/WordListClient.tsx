@@ -125,12 +125,12 @@ export function WordListClient({ chapter }: Props) {
 			<div className="pixel-panel bg-white p-6 text-center dark:bg-stone-900">
 				<div className="text-2xl text-stone-700 dark:text-stone-200">
 					{isTopo
-						? "Geen landen in dit hoofdstuk."
-						: "Geen woordenschat in dit hoofdstuk."}
+						? "Geen landen in dit onderwerp."
+						: "Geen woordenschat in dit onderwerp."}
 				</div>
 				{hasDeclension && (
 					<div className="mt-1 text-xl text-stone-500 dark:text-stone-400">
-						Dit hoofdstuk bevat alleen verbuiging/vervoeging oefeningen.
+						Dit onderwerp bevat alleen verbuiging/vervoeging oefeningen.
 					</div>
 				)}
 			</div>
@@ -310,7 +310,7 @@ export function WordListClient({ chapter }: Props) {
 
 			{hasDeclension && (
 				<div className="border-4 border-amber-700 bg-amber-100 p-4 text-xl text-amber-800 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200">
-					ℹ️ Dit hoofdstuk bevat naast woordenschat ook{" "}
+					ℹ️ Dit onderwerp bevat naast woordenschat ook{" "}
 					{chapter.exercises.filter((e) => e.type === "declension").length}{" "}
 					verbuiging/vervoeging oefeningen — die staan niet in deze lijst.
 				</div>

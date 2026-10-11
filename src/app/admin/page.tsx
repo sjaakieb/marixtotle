@@ -142,7 +142,7 @@ export default function AdminPage() {
 							onChange={(e) => setChapterId(e.target.value)}
 							className="border-[3px] border-stone-900 bg-white px-2 py-1.5 text-xl text-stone-900 dark:border-black dark:bg-stone-950 dark:text-stone-100"
 						>
-							<option value="">Alle hoofdstukken</option>
+							<option value="">Alle onderwerpen</option>
 							{chapters.map((c) => (
 								<option key={c.id} value={c.id}>
 									{c.title}

@@ -30,6 +30,12 @@
 	},
 	"overrides": [
 		{
+			"includes": ["src/topo/geo*.ts"],
+			"formatter": { "enabled": false },
+			"linter": { "enabled": false },
+			"assist": { "enabled": false }
+		},
+		{
 			"includes": ["public/**/*.svg"],
 			"linter": {
 				"rules": {

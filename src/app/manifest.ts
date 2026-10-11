@@ -2,10 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: "Marixtotle – Taaltrainer",
+		name: "Marixtotle – Marnix",
 		short_name: "Marixtotle",
-		description:
-			"Duolingo-variant voor huiswerk – Nederlands ↔ Latijn, Frans, Engels & Grieks",
+		description: "Hulp bij het leren op het Marnix",
 		id: "/",
 		start_url: "/",
 		scope: "/",

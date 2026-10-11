@@ -15,8 +15,7 @@ export default function Home() {
 							Marixtotle
 						</h1>
 						<p className="mt-2 text-xl leading-none text-stone-600 dark:text-stone-400">
-							Duolingo-variant voor huiswerk • Latijn • Frans • Engels • Grieks
-							• Nederlands
+							Hulp bij het leren op het Marnix
 						</p>
 					</div>
 					<div className="ml-auto">
@@ -28,7 +27,7 @@ export default function Home() {
 			<main className="mx-auto max-w-3xl px-5 pb-12">
 				<div className="pixel-panel bg-white p-6 sm:p-8 dark:bg-stone-900">
 					<h2 className="font-pixel text-xs leading-relaxed text-stone-900 dark:text-stone-50">
-						▶ Kies een taal en hoofdstuk
+						▶ Kies een vak en onderwerp
 						<span className="animate-pixel-blink">_</span>
 					</h2>
 					<p className="mt-3 text-xl leading-snug text-stone-600 dark:text-stone-400">

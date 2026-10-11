@@ -28,11 +28,10 @@ const terminal = VT323({
 
 export const metadata: Metadata = {
 	title: {
-		default: "Marixtotle – Taaltrainer",
+		default: "Marixtotle – Marnix",
 		template: "%s | Marixtotle",
 	},
-	description:
-		"Duolingo-variant voor huiswerk – Nederlands ↔ Latijn, Frans, Engels & Grieks",
+	description: "Hulp bij het leren op het Marnix",
 	applicationName: "Marixtotle",
 	manifest: "/manifest.webmanifest",
 	appleWebApp: {

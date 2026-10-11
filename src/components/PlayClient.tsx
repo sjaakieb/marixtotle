@@ -264,7 +264,7 @@ export function PlayClient({
 	const handleReset = () => {
 		if (
 			!window.confirm(
-				"Voortgang voor dit hoofdstuk wissen? Alle niveaus terug naar 0.",
+				"Voortgang voor dit onderwerp wissen? Alle niveaus terug naar 0.",
 			)
 		)
 			return;
@@ -326,10 +326,11 @@ export function PlayClient({
 				<div className="pixel-panel mx-auto max-w-xl bg-white p-8 text-center dark:bg-stone-900">
 					<div className="text-4xl">🏆</div>
 					<h2 className="mt-4 font-pixel text-sm leading-relaxed text-stone-900 dark:text-stone-50">
-						★ Hoofdstuk beheerst! ★
+						★ Onderwerp beheerst! ★
 					</h2>
 					<p className="mt-2 text-2xl text-stone-600 dark:text-stone-400">
-						{chapter.title} — alle woorden op niveau 5.
+						{chapter.title} — alle{" "}
+						{chapter.language === "topo" ? "landen" : "woorden"} op niveau 5.
 					</p>
 					<div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
 						<Link
@@ -342,7 +343,7 @@ export function PlayClient({
 							href="/"
 							className="pixel-btn bg-white px-6 py-3 font-pixel text-[11px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							Ander hoofdstuk
+							Ander onderwerp
 						</Link>
 					</div>
 				</div>
@@ -352,7 +353,7 @@ export function PlayClient({
 			return (
 				<div className="pixel-panel mx-auto max-w-xl bg-white p-8 text-center dark:bg-stone-900">
 					<div className="text-2xl text-stone-700 dark:text-stone-200">
-						Geen oefenitems in dit hoofdstuk.
+						Geen oefenitems in dit onderwerp.
 					</div>
 					<Link
 						href="/"
@@ -409,7 +410,7 @@ export function PlayClient({
 							</div>
 						) : (
 							<div className="mt-4 border-4 border-violet-700 bg-violet-100 p-3 text-xl text-violet-800 dark:border-violet-400 dark:bg-violet-950 dark:text-violet-200">
-								Beheersing hoofdstuk:{" "}
+								Beheersing onderwerp:{" "}
 								<span className="font-bold">
 									{startPct}% → {liveStats.pct}%
 								</span>
@@ -443,7 +444,7 @@ export function PlayClient({
 							href="/"
 							className="pixel-btn bg-white px-6 py-3 font-pixel text-[11px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							Ander hoofdstuk
+							Ander onderwerp
 						</Link>
 					</div>
 					{!isTest && (
@@ -470,7 +471,7 @@ export function PlayClient({
 					href="/"
 					className="text-2xl text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
 				>
-					← Hoofdstukken
+					← Onderwerpen
 				</Link>
 				<div className="flex items-center gap-3">
 					<button
@@ -609,7 +610,7 @@ function FlatPracticeView({
 		return (
 			<div className="pixel-panel mx-auto max-w-xl bg-white p-8 text-center dark:bg-stone-900">
 				<div className="text-2xl text-stone-700 dark:text-stone-200">
-					Geen oefenitems in dit hoofdstuk.
+					Geen oefenitems in dit onderwerp.
 				</div>
 				<Link
 					href="/"
@@ -696,7 +697,7 @@ function FlatPracticeView({
 							href="/"
 							className="pixel-btn bg-white px-6 py-3 font-pixel text-[11px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							Ander hoofdstuk
+							Ander onderwerp
 						</Link>
 					</div>
 				</div>
@@ -714,7 +715,7 @@ function FlatPracticeView({
 					href="/"
 					className="text-2xl text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
 				>
-					← Hoofdstukken
+					← Onderwerpen
 				</Link>
 				<div className="flex items-center gap-3">
 					<button
