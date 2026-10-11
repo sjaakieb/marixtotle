@@ -39,6 +39,14 @@ export const LANGUAGES = [
 		description: "Werkwoordspelling",
 		color: "amber",
 	},
+	{
+		id: "topo",
+		label: "Aardrijkskunde",
+		nativeLabel: "Aardrijkskunde",
+		flag: "🗺️",
+		description: "Land ↔ Hoofdstad",
+		color: "teal",
+	},
 ] as const;
 
 export type LanguageId = (typeof LANGUAGES)[number]["id"];

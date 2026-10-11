@@ -18,6 +18,13 @@ import { chapter as greekTransliteration } from "./greek/transliteration";
 import { chapter as latin2 } from "./latin/minerva2";
 import { chapter as latin2a } from "./latin/minerva2a";
 import { chapter as latin2b } from "./latin/minerva2b";
+import {
+	level1 as topoLevel1,
+	level2 as topoLevel2,
+	level3 as topoLevel3,
+	level4 as topoLevel4,
+	level5 as topoLevel5,
+} from "./topo";
 
 const rawChapters = [
 	dutchWerkwoorden1,
@@ -39,6 +46,11 @@ const rawChapters = [
 	greekTransliteration,
 	greekClassical1,
 	greek1,
+	topoLevel1,
+	topoLevel2,
+	topoLevel3,
+	topoLevel4,
+	topoLevel5,
 ] as const;
 
 export const chapters: Chapter[] = chaptersSchema.parse(rawChapters);
@@ -57,4 +69,5 @@ export const chaptersByLanguage = {
 	english: getChaptersByLanguage("english"),
 	greek: getChaptersByLanguage("greek"),
 	dutch: getChaptersByLanguage("dutch"),
+	topo: getChaptersByLanguage("topo"),
 } as const;

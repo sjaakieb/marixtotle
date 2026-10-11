@@ -35,7 +35,18 @@ export type DeclItem = {
 	options?: string[];
 };
 
-export type MasteryItem = VocabItem | DeclItem;
+export type TopoItem = {
+	kind: "topo";
+	/** stable mastery key: topo:<n> */
+	key: string;
+	country: string;
+	/** accepted capitals, first is canonical */
+	capitals: string[];
+	lat: number;
+	lon: number;
+};
+
+export type MasteryItem = VocabItem | DeclItem | TopoItem;
 
 /** Normalized mastery key for a vocab pair (shared with WordListClient dots). */
 export function wordKey(nl: string, foreign: string): string {
@@ -81,9 +92,21 @@ function splitPair(
 export function getMasteryItems(chapter: Chapter): MasteryItem[] {
 	const vocab = new Map<string, VocabItem>();
 	const decl: DeclItem[] = [];
+	const topo: TopoItem[] = [];
 	const language = (chapter.language ?? "latin") as LanguageId;
 
 	for (const ex of chapter.exercises) {
+		if (ex.type === "topo") {
+			topo.push({
+				kind: "topo",
+				key: ex.id,
+				country: ex.country,
+				capitals: [...ex.capitals],
+				lat: ex.lat,
+				lon: ex.lon,
+			});
+			continue;
+		}
 		if (ex.type === "vocab") {
 			const { nl, foreign } = splitPair(ex.prompt, ex.answer, ex.direction);
 			const key = vocabGroupKey(foreign, language);
@@ -155,7 +178,7 @@ export function getMasteryItems(chapter: Chapter): MasteryItem[] {
 		}
 	}
 
-	return [...vocab.values(), ...decl];
+	return [...vocab.values(), ...decl, ...topo];
 }
 
 export function countVocabItems(items: MasteryItem[]): number {

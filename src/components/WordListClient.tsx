@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type ChapterProgress, loadChapterProgress } from "@/lib/progress";
 import type { Chapter, LanguageId } from "@/lib/schema";
 import { getSpeechLang, isSpeechSupported, speak } from "@/lib/speech";
-import { getMasteryItems, type VocabItem } from "@/lib/words";
+import { getMasteryItems, type TopoItem, type VocabItem } from "@/lib/words";
 
 type WordPair = {
 	key: string;
@@ -17,18 +17,32 @@ type WordPair = {
 /**
  * Same canonical items as the quiz: parenthetical hints stripped
  * ("οὐ (voor medeklinker)" → "οὐ") and both directions merged,
- * so each word appears exactly once.
+ * so each word appears exactly once. Topo chapters list one row
+ * per country (land ↔ hoofdstad).
  */
 function getWordPairs(chapter: Chapter): WordPair[] {
-	return getMasteryItems(chapter)
-		.filter((it): it is VocabItem => it.kind === "vocab")
-		.map((it) => ({
-			key: it.key,
-			nl: it.nl,
-			foreign: it.foreign,
-			hint: it.hint,
-			alternatives: [...it.nlAlternatives, ...it.foreignAlternatives],
-		}));
+	const pairs: WordPair[] = [];
+	for (const it of getMasteryItems(chapter)) {
+		if (it.kind === "vocab") {
+			const v = it as VocabItem;
+			pairs.push({
+				key: v.key,
+				nl: v.nl,
+				foreign: v.foreign,
+				hint: v.hint,
+				alternatives: [...v.nlAlternatives, ...v.foreignAlternatives],
+			});
+		} else if (it.kind === "topo") {
+			const t = it as TopoItem;
+			pairs.push({
+				key: t.key,
+				nl: t.country,
+				foreign: t.capitals[0] ?? "",
+				alternatives: t.capitals.slice(1),
+			});
+		}
+	}
+	return pairs;
 }
 
 const languageHeaders: Record<
@@ -40,6 +54,7 @@ const languageHeaders: Record<
 	english: { foreignLabel: "Engels", foreignShort: "EN" },
 	greek: { foreignLabel: "Grieks", foreignShort: "EL" },
 	dutch: { foreignLabel: "Nederlands", foreignShort: "NL" },
+	topo: { foreignLabel: "Hoofdstad", foreignShort: "HS" },
 };
 
 type Props = {
@@ -101,6 +116,7 @@ export function WordListClient({ chapter }: Props) {
 
 	const total = allPairs.length;
 	const showing = filtered.length;
+	const isTopo = languageId === "topo";
 
 	const hasDeclension = chapter.exercises.some((e) => e.type === "declension");
 
@@ -108,7 +124,9 @@ export function WordListClient({ chapter }: Props) {
 		return (
 			<div className="pixel-panel bg-white p-6 text-center dark:bg-stone-900">
 				<div className="text-2xl text-stone-700 dark:text-stone-200">
-					Geen woordenschat in dit hoofdstuk.
+					{isTopo
+						? "Geen landen in dit hoofdstuk."
+						: "Geen woordenschat in dit hoofdstuk."}
 				</div>
 				{hasDeclension && (
 					<div className="mt-1 text-xl text-stone-500 dark:text-stone-400">
@@ -126,7 +144,7 @@ export function WordListClient({ chapter }: Props) {
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex items-center gap-2 font-terminal text-xl text-stone-600 dark:text-stone-400">
 						<span className="border-2 border-sky-700 bg-sky-100 px-2 py-0.5 text-sky-800 dark:border-sky-400 dark:bg-sky-950 dark:text-sky-200">
-							{total} unieke woorden
+							{total} unieke {isTopo ? "landen" : "woorden"}
 						</span>
 					</div>
 				</div>
@@ -140,7 +158,11 @@ export function WordListClient({ chapter }: Props) {
 							type="search"
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
-							placeholder="Zoeken (NL of vertaling)…"
+							placeholder={
+								isTopo
+									? "Zoeken (land of hoofdstad)…"
+									: "Zoeken (NL of vertaling)…"
+							}
 							className="w-full border-[3px] border-stone-900 bg-white py-2.5 pl-9 pr-3 text-2xl text-stone-900 shadow-[4px_4px_0_0_var(--pixel-shadow)] outline-none placeholder:text-stone-400 dark:border-black dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500"
 						/>
 					</div>
@@ -167,7 +189,7 @@ export function WordListClient({ chapter }: Props) {
 					<thead className="bg-stone-900 font-pixel text-[9px] text-lime-300 dark:bg-black dark:text-lime-300">
 						<tr>
 							<th className="px-4 py-3 w-12">#</th>
-							<th className="px-4 py-3">Nederlands</th>
+							<th className="px-4 py-3">{isTopo ? "Land" : "Nederlands"}</th>
 							<th className="px-4 py-3">{header.foreignLabel}</th>
 							<th className="px-4 py-3 w-24">Niveau</th>
 							<th className="px-4 py-3 w-1/4">Hint / info</th>
@@ -239,7 +261,7 @@ export function WordListClient({ chapter }: Props) {
 					>
 						<div className="flex items-start justify-between gap-3">
 							<div className="font-pixel text-[9px] text-stone-400 dark:text-stone-500">
-								#{i + 1} • NL ↔ {header.foreignShort}
+								#{i + 1} • {isTopo ? "Land" : "NL"} ↔ {header.foreignShort}
 							</div>
 							<span className="border-2 border-stone-400 bg-stone-200 px-2 py-0.5 font-pixel text-[9px] text-stone-600 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300">
 								L{levelOf(pair.key)}/5
@@ -248,7 +270,7 @@ export function WordListClient({ chapter }: Props) {
 						<div className="mt-2 grid grid-cols-2 gap-3">
 							<div>
 								<div className="font-pixel text-[9px] text-stone-500 dark:text-stone-400">
-									Nederlands
+									{isTopo ? "Land" : "Nederlands"}
 								</div>
 								<div className="mt-1 text-2xl text-stone-900 dark:text-stone-100">
 									{pair.nl}

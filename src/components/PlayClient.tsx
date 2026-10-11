@@ -83,6 +83,28 @@ function questionToExercise(
 			audioLang: q.audioText ? getSpeechLang(lang) : undefined,
 		};
 	}
+	if (q.kind === "topo") {
+		const src = chapter.exercises.find(
+			(e): e is Extract<Exercise, { type: "topo" }> =>
+				e.type === "topo" && e.id === q.itemKey,
+		);
+		return {
+			exercise: {
+				id: `${q.itemKey}-L${q.level}`,
+				type: "topo",
+				country: src?.country ?? q.answer,
+				capitals: src?.capitals ?? (q.topoAsk === "capital" ? [q.answer] : []),
+				lat: q.lat ?? src?.lat ?? 0,
+				lon: q.lon ?? src?.lon ?? 0,
+				ask: q.topoAsk ?? "capital",
+				prompt: q.prompt,
+				answer: q.answer,
+				alternatives: q.alternatives.length > 0 ? q.alternatives : undefined,
+				hint: q.showHint ? q.hint : undefined,
+				options: q.options,
+			},
+		};
+	}
 	return {
 		exercise: {
 			id: q.itemKey,
@@ -109,6 +131,14 @@ export function PlayClient({
 	const isTest = mode === "test";
 	const isFlat = isFlatPracticeChapter(chapter);
 	const items = useMemo(() => getMasteryItems(chapter), [chapter]);
+	/** All chapter capitals as faint context dots on the topo map. */
+	const geoDots = useMemo(
+		() =>
+			items.flatMap((it) =>
+				it.kind === "topo" ? [{ lat: it.lat, lon: it.lon }] : [],
+			),
+		[items],
+	);
 	const [levels, setLevels] = useState<ChapterProgress>({});
 	const [loaded, setLoaded] = useState(false);
 	const [index, setIndex] = useState(0);
@@ -498,6 +528,15 @@ export function PlayClient({
 					translation={current.translation}
 					hideHint={!current.showHint}
 					strict={chapter.language === "dutch"}
+					geo={
+						current.kind === "topo" &&
+						current.lat != null &&
+						current.lon != null
+							? { lat: current.lat, lon: current.lon }
+							: undefined
+					}
+					geoDots={geoDots}
+					geoShowDot={current.topoAsk === "country"}
 					report={{
 						chapterId: chapter.id,
 						itemKey: current.itemKey,
@@ -519,6 +558,8 @@ export function PlayClient({
 					"Tip: type je antwoord – geen speciale tekens nodig."}
 				{chapter.language === "dutch" &&
 					"Tip: let op d/t, sterke werkwoorden en voltooide deelwoorden."}
+				{chapter.language === "topo" &&
+					"Tip: accenten mag je weglaten (Cairo voor Caïro) – één tikfoutje mag."}
 				{!chapter.language && "Tip: gebruik de balk voor speciale tekens."}
 			</div>
 		</div>

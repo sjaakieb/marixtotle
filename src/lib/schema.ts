@@ -6,6 +6,7 @@ export const languageIdSchema = z.enum([
 	"english",
 	"greek",
 	"dutch",
+	"topo",
 ]);
 
 export type LanguageId = z.infer<typeof languageIdSchema>;
@@ -57,9 +58,32 @@ export const declensionExerciseSchema = z.object({
 	options: z.array(z.string().min(1)).min(2).max(6).optional(),
 });
 
+export const topoExerciseSchema = z.object({
+	id: z.string().min(1),
+	type: z.literal("topo"),
+	/** Rendered question, e.g. "Wat is de hoofdstad van Canada?" */
+	prompt: z.string().min(1),
+	/** Canonical answer (first capital or country, depends on direction) */
+	answer: z.string().min(1),
+	alternatives: z.array(z.string().min(1)).min(1).max(6).optional(),
+	wrongAnswers: z.array(z.string().min(1)).min(1).max(6).optional(),
+	/** Country name (Dutch), e.g. "Canada" */
+	country: z.string().min(1),
+	/** Accepted capitals, first is canonical (e.g. ["Caïro", "Cairo"]) */
+	capitals: z.array(z.string().min(1)).min(1).max(6),
+	/** Capital coordinates for the map */
+	lat: z.number().min(-90).max(90),
+	lon: z.number().min(-180).max(180),
+	/** What the learner must produce; set at runtime per question, not in content */
+	ask: z.enum(["capital", "country"]).optional(),
+	hint: z.string().optional(),
+	options: z.array(z.string().min(1)).min(2).max(6).optional(),
+});
+
 export const exerciseSchema = z.discriminatedUnion("type", [
 	vocabExerciseSchema,
 	declensionExerciseSchema,
+	topoExerciseSchema,
 ]);
 
 export const chapterSchema = z.object({
@@ -74,6 +98,7 @@ export const chaptersSchema = z.array(chapterSchema);
 
 export type VocabExercise = z.infer<typeof vocabExerciseSchema>;
 export type DeclensionExercise = z.infer<typeof declensionExerciseSchema>;
+export type TopoExercise = z.infer<typeof topoExerciseSchema>;
 export type Exercise = z.infer<typeof exerciseSchema>;
 export type Chapter = z.infer<typeof chapterSchema>;
 

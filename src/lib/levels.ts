@@ -1,4 +1,4 @@
-import type { DeclItem, MasteryItem, VocabItem } from "./words";
+import type { DeclItem, MasteryItem, TopoItem, VocabItem } from "./words";
 
 export const MAX_LEVEL = 5;
 export const MIN_LEVEL = 0;
@@ -8,7 +8,7 @@ export type Level = 1 | 2 | 3 | 4 | 5;
 
 export type GeneratedQuestion = {
 	itemKey: string;
-	kind: "vocab" | "declension";
+	kind: "vocab" | "declension" | "topo";
 	/** 1..5, the level being tested right now */
 	level: Level;
 	/** what to show as the prompt text (for audio L4 this is a label, not the answer) */
@@ -30,6 +30,11 @@ export type GeneratedQuestion = {
 	form?: string;
 	/** short badge, e.g. "L2 • NL → FR • meerkeuze" */
 	badge: string;
+	/** present for topo questions: capital coordinates for the map */
+	lat?: number;
+	lon?: number;
+	/** present for topo questions: what the learner must produce */
+	topoAsk?: "capital" | "country";
 };
 
 /**
@@ -260,6 +265,121 @@ function buildVocabQuestion(
 	}
 }
 
+function topoPool(items: MasteryItem[], side: "country" | "capital"): string[] {
+	const pool: string[] = [];
+	for (const it of items) {
+		if (it.kind !== "topo") continue;
+		pool.push(side === "country" ? it.country : (it.capitals[0] ?? ""));
+	}
+	return pool.filter(Boolean);
+}
+
+function topoBadge(level: Level, ask: "capital" | "country"): string {
+	const dir = ask === "capital" ? "Land → Hoofdstad" : "Hoofdstad → Land";
+	const mode = level <= 2 ? "meerkeuze" : "typen";
+	return `L${level}/5 • ${dir} • ${mode} (${LEVEL_KIND[level]})`;
+}
+
+function buildTopoQuestion(
+	item: TopoItem,
+	level: Level,
+	allItems: MasteryItem[],
+): GeneratedQuestion {
+	const base = {
+		itemKey: item.key,
+		kind: "topo" as const,
+		level,
+		lat: item.lat,
+		lon: item.lon,
+	};
+	const capital = item.capitals[0] ?? "";
+	// L1: MCQ land→hoofdstad. L2: MCQ hoofdstad→land.
+	// L3: typen land→hoofdstad. L4: typen hoofdstad→land. L5: typen, 50/50.
+	const ask: "capital" | "country" =
+		level === 1 || level === 3
+			? "capital"
+			: level === 2 || level === 4
+				? "country"
+				: Math.random() < 0.5
+					? "capital"
+					: "country";
+	if (level <= 2) {
+		if (ask === "capital") {
+			const distractors = sampleDistractors(
+				topoPool(allItems, "capital"),
+				item.capitals,
+				3,
+			);
+			return {
+				...base,
+				topoAsk: ask,
+				prompt: `Wat is de hoofdstad van ${item.country}?`,
+				answer: capital,
+				alternatives: item.capitals.slice(1),
+				wrongAnswers: [],
+				options: shuffle([capital, ...distractors]),
+				showHint: false,
+				badge: topoBadge(level, ask),
+			};
+		}
+		const distractors = sampleDistractors(
+			topoPool(allItems, "country"),
+			[item.country],
+			3,
+		);
+		return {
+			...base,
+			topoAsk: ask,
+			prompt: `Van welk land is ${capital} de hoofdstad?`,
+			answer: item.country,
+			alternatives: [],
+			wrongAnswers: [],
+			options: shuffle([item.country, ...distractors]),
+			showHint: false,
+			badge: topoBadge(level, ask),
+		};
+	}
+	if (ask === "capital") {
+		return {
+			...base,
+			topoAsk: ask,
+			prompt: `Wat is de hoofdstad van ${item.country}?`,
+			answer: capital,
+			alternatives: item.capitals.slice(1),
+			wrongAnswers: [],
+			showHint: false,
+			badge: topoBadge(level, ask),
+		};
+	}
+	return {
+		...base,
+		topoAsk: ask,
+		prompt: `Van welk land is ${capital} de hoofdstad?`,
+		answer: item.country,
+		alternatives: [],
+		wrongAnswers: [],
+		showHint: false,
+		badge: topoBadge(level, ask),
+	};
+}
+
+/** Mirror within a band, so a repeated item asks the other direction
+ *  (vocab/topo L1↔L2 and L3↔L4 are opposite directions). L5 stays L5. */
+function mirrorLevel(level: Level): Level {
+	switch (level) {
+		case 1:
+			return 2;
+		case 2:
+			return 1;
+		case 3:
+			return 4;
+		case 4:
+			return 3;
+		case 5:
+			return 5;
+	}
+}
+
 function declPool(allItems: MasteryItem[], self: DeclItem): string[] {
 	const pool: string[] = [];
 	for (const it of allItems) {
@@ -331,6 +451,7 @@ export function buildQuestionAtLevel(
 	allItems: MasteryItem[],
 ): GeneratedQuestion {
 	if (item.kind === "vocab") return buildVocabQuestion(item, level, allItems);
+	if (item.kind === "topo") return buildTopoQuestion(item, level, allItems);
 	return buildDeclQuestion(item, level, allItems);
 }
 
@@ -351,7 +472,7 @@ export function buildSession(
 	for (const it of items) {
 		// Mastered items (5) stay out of the rotation. When everything is
 		// mastered the session is empty on purpose: practice is done, the
-		// main screen offers a toets instead. Never repeat words to fill up.
+		// main screen offers a toets instead.
 		if ((levels[it.key] ?? 0) >= MAX_LEVEL) continue;
 		byBand[bandForStored(levels[it.key] ?? 0)].push(it);
 	}
@@ -369,7 +490,33 @@ export function buildSession(
 			if (!picked.includes(it)) picked.push(it);
 		}
 	}
-	return picked.map((it) => buildQuestion(it, levels[it.key] ?? 0, items));
+	// Top up short sessions (chapter tail: only a few items left) by
+	// re-asking picked items, so a session never shrinks to a single
+	// question. Repeats get the mirrored level in their band (see below),
+	// i.e. the other direction for vocab/topo.
+	if (picked.length > 0 && picked.length < size) {
+		const cycle = shuffle(picked);
+		let i = 0;
+		while (picked.length < size) {
+			const next = cycle[i % cycle.length];
+			if (!next) break;
+			picked.push(next);
+			i++;
+		}
+	}
+	// First occurrence draws a random level in its band; repeats alternate
+	// to the mirrored level, so the same item never asks the identical
+	// question twice in a row.
+	const lastLevel = new Map<string, Level>();
+	return picked.map((it) => {
+		const prev = lastLevel.get(it.key);
+		const level =
+			prev === undefined
+				? nextLevelForItem(levels[it.key] ?? 0)
+				: mirrorLevel(prev);
+		lastLevel.set(it.key, level);
+		return buildQuestionAtLevel(it, level, items);
+	});
 }
 
 /**

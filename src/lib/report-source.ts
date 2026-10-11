@@ -11,7 +11,7 @@ export function findReportSources(
 	const language = chapter.language ?? "latin";
 	const out: { exerciseId: string; prompt: string; answer: string }[] = [];
 	for (const ex of chapter.exercises) {
-		if (ex.type === "declension") {
+		if (ex.type === "declension" || ex.type === "topo") {
 			if (ex.id === itemKey) {
 				out.push({ exerciseId: ex.id, prompt: ex.prompt, answer: ex.answer });
 			}

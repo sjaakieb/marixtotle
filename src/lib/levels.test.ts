@@ -252,10 +252,11 @@ describe("levels", () => {
 		expect(masteryPct({}, 0)).toBe(0);
 	});
 
-	it("session holds each remaining word once, never repeats", () => {
+	it("short sessions top up with repeats at mirrored levels", () => {
+		// Only a/b remain: session fills to 10 with repeats, alternating
+		// L1↔L2 (opposite directions) per item.
 		const session = buildSession(items, { a: 0, b: 0, c: 5, d: 5, e: 5 }, 10);
-		// Only a/b remain: two recognition questions, no padding to 10.
-		expect(session).toHaveLength(2);
+		expect(session).toHaveLength(10);
 		expect(
 			session.every(
 				(q) =>
@@ -263,7 +264,25 @@ describe("levels", () => {
 					(q.itemKey === "a" || q.itemKey === "b"),
 			),
 		).toBe(true);
-		expect(new Set(session.map((q) => q.itemKey)).size).toBe(2);
+		for (const key of ["a", "b"]) {
+			const lvls = session.filter((q) => q.itemKey === key).map((q) => q.level);
+			// Alternation guarantees both directions appear per item.
+			expect(new Set(lvls)).toEqual(new Set([1, 2]));
+		}
+	});
+
+	it("single remaining item fills the session, alternating L3↔L4", () => {
+		const session = buildSession(items, { a: 5, b: 5, c: 5, d: 5, e: 3 }, 10);
+		expect(session).toHaveLength(10);
+		expect(session.every((q) => q.itemKey === "e")).toBe(true);
+		expect(session.every((q) => q.level === 3 || q.level === 4)).toBe(true);
+		expect(new Set(session.map((q) => q.level))).toEqual(new Set([3, 4]));
+	});
+
+	it("final-band tail repeats L5", () => {
+		const session = buildSession(items, { a: 5, b: 5, c: 5, d: 5, e: 4 }, 10);
+		expect(session).toHaveLength(10);
+		expect(session.every((q) => q.itemKey === "e" && q.level === 5)).toBe(true);
 	});
 
 	it("session is capped at the requested size", () => {

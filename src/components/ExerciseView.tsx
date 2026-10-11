@@ -2,7 +2,12 @@
 
 import { useMemo, useRef, useState } from "react";
 import { insertAtCursor, toggleMacronBeforeCursor } from "@/lib/macron";
-import { detectWrongLanguage, gradeExercise, normalize } from "@/lib/matcher";
+import {
+	detectWrongLanguage,
+	type Grade,
+	gradeExercise,
+	normalize,
+} from "@/lib/matcher";
 import type { Exercise, LanguageId } from "@/lib/schema";
 import {
 	getLanguageFromDirection,
@@ -11,9 +16,11 @@ import {
 } from "@/lib/schema";
 import { playFail, playSuccess } from "@/lib/sounds";
 import { getSpeechLang, isSpeechSupported, speak } from "@/lib/speech";
+import { gradeTopo, topoNorm } from "@/lib/topo-match";
 import { LanguageToolbar } from "./LanguageToolbar";
 import { MacronToolbar } from "./MacronToolbar";
 import { ReportButton, type ReportContext } from "./ReportButton";
+import { TopoMap } from "./TopoMap";
 
 function shuffle<T>(arr: T[]): T[] {
 	const a = [...arr];
@@ -47,7 +54,71 @@ type Props = {
 	 * (case/whitespace/punctuation) still applies.
 	 */
 	strict?: boolean;
+	/** present for topo questions: capital coordinates for the map */
+	geo?: { lat: number; lon: number } | null;
+	/** all chapter capitals, drawn as faint context dots */
+	geoDots?: { lat: number; lon: number }[];
+	/**
+	 * Show the capital dot before answering. True for hoofdstad→land
+	 * (continent-hint); false for land→hoofdstad (would give it away).
+	 * After submitting the dot is always revealed.
+	 */
+	geoShowDot?: boolean;
 };
+
+/** Grade one input: topo uses its own accent-insensitive grader. */
+function gradeAnswer(
+	input: string,
+	exercise: Exercise,
+	strict?: boolean,
+): Grade {
+	if (exercise.type === "topo") {
+		return gradeTopo(input, [
+			exercise.answer,
+			...(exercise.alternatives ?? []),
+		]);
+	}
+	return gradeExercise(input, exercise, { strict });
+}
+
+function sameAsAnswer(input: string, exercise: Exercise): boolean {
+	if (exercise.type === "topo") {
+		return topoNorm(input) === topoNorm(exercise.answer);
+	}
+	return normalize(input) === normalize(exercise.answer);
+}
+
+/** World map for topo questions, with spoiler-free dot logic. */
+function TopoMapBlock({
+	exercise,
+	geo,
+	geoDots,
+	geoShowDot,
+	submitted,
+}: {
+	exercise: Exercise;
+	geo?: { lat: number; lon: number } | null;
+	geoDots?: { lat: number; lon: number }[];
+	geoShowDot?: boolean;
+	submitted: boolean;
+}) {
+	if (exercise.type !== "topo" || !geo) return null;
+	const show = geoShowDot || submitted;
+	return (
+		<TopoMap
+			dots={geoDots}
+			highlight={
+				show
+					? {
+							lat: geo.lat,
+							lon: geo.lon,
+							label: submitted ? exercise.answer : undefined,
+						}
+					: null
+			}
+		/>
+	);
+}
 
 export function ExerciseView({
 	exercise,
@@ -62,6 +133,9 @@ export function ExerciseView({
 	hideHint,
 	report,
 	strict,
+	geo,
+	geoDots,
+	geoShowDot,
 }: Props) {
 	const isMCQ = !!exercise.options && exercise.options.length > 0;
 	return isMCQ ? (
@@ -77,6 +151,9 @@ export function ExerciseView({
 			hideHint={hideHint}
 			report={report}
 			strict={strict}
+			geo={geo}
+			geoDots={geoDots}
+			geoShowDot={geoShowDot}
 		/>
 	) : (
 		<TextInputExercise
@@ -92,6 +169,9 @@ export function ExerciseView({
 			hideHint={hideHint}
 			report={report}
 			strict={strict}
+			geo={geo}
+			geoDots={geoDots}
+			geoShowDot={geoShowDot}
 		/>
 	);
 }
@@ -107,6 +187,9 @@ function MultipleChoiceExercise({
 	hideHint,
 	report,
 	strict,
+	geo,
+	geoDots,
+	geoShowDot,
 }: Props) {
 	const [selected, setSelected] = useState<string | null>(null);
 	const [submitted, setSubmitted] = useState(false);
@@ -116,13 +199,13 @@ function MultipleChoiceExercise({
 	);
 	const correct =
 		selected != null
-			? gradeExercise(selected, exercise, { strict }) !== "wrong"
+			? gradeAnswer(selected, exercise, strict) !== "wrong"
 			: false;
 	const isAlternative =
 		submitted &&
 		correct &&
 		selected != null &&
-		normalize(selected) !== normalize(exercise.answer);
+		!sameAsAnswer(selected, exercise);
 
 	const handleSubmit = () => {
 		if (selected == null || submitted) return;
@@ -145,6 +228,13 @@ function MultipleChoiceExercise({
 				levelBadge={levelBadge}
 				audioText={audioText}
 				audioLang={audioLang}
+			/>
+			<TopoMapBlock
+				exercise={exercise}
+				geo={geo}
+				geoDots={geoDots}
+				geoShowDot={geoShowDot}
+				submitted={submitted}
 			/>
 			<div className="grid gap-2">
 				{shuffledOptions.map((opt) => {
@@ -225,6 +315,9 @@ function TextInputExercise({
 	hideHint,
 	report,
 	strict,
+	geo,
+	geoDots,
+	geoShowDot,
 }: Props) {
 	const [value, setValue] = useState("");
 	const [submitted, setSubmitted] = useState(false);
@@ -242,17 +335,20 @@ function TextInputExercise({
 	const showMacronToolbar = needsMacronLegacy && inferredLanguage === "latin";
 	const effectiveLanguage: LanguageId =
 		(inferredLanguage as LanguageId) ?? "latin";
-	const grade = gradeExercise(value, exercise, { strict });
+	const grade = gradeAnswer(value, exercise, strict);
 	const correct = grade !== "wrong";
 	const isTypo = submitted && grade === "typo";
 	// Wrong language? Explain instead of a bare "Niet correct" (e.g. typed
 	// the Dutch meaning on a listening question, or copied the prompt).
+	// Skipped for topo: land/hoofdstad-namen zijn geen vertalingen.
 	const wrongLanguage =
-		submitted && !correct
+		submitted && !correct && exercise.type !== "topo"
 			? detectWrongLanguage(value, exercise, translation, exercise.prompt)
 			: undefined;
 	const wantsForeign =
-		exercise.type !== "vocab" || exercise.direction.startsWith("nl->");
+		exercise.type === "topo"
+			? (exercise.ask ?? "capital") === "capital"
+			: exercise.type !== "vocab" || exercise.direction.startsWith("nl->");
 	let wrongLanguageHint: string | undefined;
 	if (wrongLanguage === "typed-translation") {
 		wrongLanguageHint = `Dat is de Nederlandse betekenis — type het ${getLanguageLabel(effectiveLanguage)} woord dat je hoort.`;
@@ -261,8 +357,7 @@ function TextInputExercise({
 			? `Je typte de vraag over — type het ${getLanguageLabel(effectiveLanguage)} woord.`
 			: "Je typte de vraag over — type de Nederlandse vertaling.";
 	}
-	const isAlternative =
-		submitted && correct && normalize(value) !== normalize(exercise.answer);
+	const isAlternative = submitted && correct && !sameAsAnswer(value, exercise);
 
 	const handleSubmit = (e?: React.FormEvent) => {
 		e?.preventDefault();
@@ -316,6 +411,13 @@ function TextInputExercise({
 				audioText={audioText}
 				audioLang={audioLang}
 			/>
+			<TopoMapBlock
+				exercise={exercise}
+				geo={geo}
+				geoDots={geoDots}
+				geoShowDot={geoShowDot}
+				submitted={submitted}
+			/>
 			<form onSubmit={handleSubmit} className="space-y-3">
 				<input
 					ref={inputRef}
@@ -323,11 +425,16 @@ function TextInputExercise({
 					onChange={(e) => setValue(e.target.value)}
 					disabled={submitted}
 					placeholder={
-						exercise.type === "vocab" && exercise.direction.startsWith("nl->")
-							? `Type het ${getLanguageLabel(effectiveLanguage)} woord…`
-							: exercise.type === "vocab"
-								? "Type de Nederlandse vertaling…"
-								: "Type het antwoord…"
+						exercise.type === "topo"
+							? (exercise.ask ?? "capital") === "capital"
+								? "Type de hoofdstad…"
+								: "Type het land…"
+							: exercise.type === "vocab" &&
+									exercise.direction.startsWith("nl->")
+								? `Type het ${getLanguageLabel(effectiveLanguage)} woord…`
+								: exercise.type === "vocab"
+									? "Type de Nederlandse vertaling…"
+									: "Type het antwoord…"
 					}
 					// biome-ignore lint/a11y/noAutofocus: intentional - focus input for fast drill input
 					autoFocus
@@ -433,7 +540,9 @@ function ExerciseHeader({
 	const typeLabel =
 		exercise.type === "vocab"
 			? `Woordenschat • ${formatDirection(exercise.direction)}`
-			: "Verbuiging / Vervoeging";
+			: exercise.type === "topo"
+				? `Aardrijkskunde • ${(exercise.ask ?? "capital") === "capital" ? "Land → Hoofdstad" : "Hoofdstad → Land"}`
+				: "Verbuiging / Vervoeging";
 
 	const lang: LanguageId =
 		exercise.type === "vocab"

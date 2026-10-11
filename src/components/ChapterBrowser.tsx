@@ -50,6 +50,12 @@ const languageMeta: Record<
 		description: "Werkwoordspelling",
 		color: "amber",
 	},
+	topo: {
+		label: "Aardrijkskunde",
+		flag: "🗺️",
+		description: "Land ↔ Hoofdstad",
+		color: "teal",
+	},
 };
 
 function LanguageTab({
@@ -237,11 +243,15 @@ function ChapterCard({
 					? "bg-violet-600 hover:bg-violet-500"
 					: chapter.language === "dutch"
 						? "bg-amber-600 hover:bg-amber-500"
-						: "bg-sky-600 hover:bg-sky-500";
+						: chapter.language === "topo"
+							? "bg-teal-600 hover:bg-teal-500"
+							: "bg-sky-600 hover:bg-sky-500";
 
 	const items = getMasteryItems(chapter);
 	const vocabCount = items.filter((i) => i.kind === "vocab").length;
+	const topoCount = items.filter((i) => i.kind === "topo").length;
 	const hasVocab = vocabCount > 0;
+	const hasLearnList = hasVocab || topoCount > 0;
 	const stats = getChapterStats(items, progress ?? {});
 	// Flat practice chapters (Dutch spelling) track no mastery levels:
 	// every exercise is asked once, typing only.
@@ -267,6 +277,7 @@ function ChapterCard({
 					<div className="mt-2 font-terminal text-lg leading-none text-stone-500 dark:text-stone-400">
 						{chapter.exercises.length} oefeningen • {meta.description}
 						{hasVocab && ` • ${vocabCount} woorden`}
+						{topoCount > 0 && ` • ${topoCount} landen`}
 					</div>
 					<div className="mt-3">
 						<div className="flex items-center justify-between font-pixel text-[9px]">
@@ -316,12 +327,12 @@ function ChapterCard({
 							Oefenen →
 						</Link>
 					)}
-					{hasVocab && (
+					{hasLearnList && (
 						<Link
 							href={`/words/${chapter.id}`}
 							className="pixel-btn bg-white px-3 py-2 font-pixel text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							📋 Woorden
+							{topoCount > 0 ? "📋 Leren" : "📋 Woorden"}
 						</Link>
 					)}
 				</div>
