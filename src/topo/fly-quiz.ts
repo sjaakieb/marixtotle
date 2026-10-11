@@ -1,6 +1,7 @@
 // Helivragen uit Marixtotle-chapterdata (Topokopter-quizlogica,
 // maar dan op Aardrijkskunde-chapters in plaats van landen.ts).
 import type { Chapter } from "@/lib/schema";
+import { heliTijdVoorLevel } from "./fly-tuning";
 import { project } from "./fly-map";
 
 export type FlyRichting = "land-naar-hoofdstad" | "hoofdstad-naar-land";
@@ -91,7 +92,13 @@ export function flySpeelveldMidden(lijst: readonly FlyItem[]): {
 	return { x: m.x, y: m.y };
 }
 
-/** Eindoordeel bij percentage van de maximale score (10 punten per vraag). */
+/** Maximaal haalbare punten per landing: 10 + 1,2 × volle vliegtijd.
+ *  Zelfde formule als de landingsscore, dus score/max kan nooit boven 100%. */
+export function flyMaxPerVraag(level: number): number {
+	return Math.round(10 + heliTijdVoorLevel(level) * 1.2);
+}
+
+/** Eindoordeel bij percentage van het haalbare maximum (zie flyMaxPerVraag). */
 export function flyOordeelBijPct(pct: number): string {
 	return pct >= 90
 		? "⭐ Wereldkampioen topografie!"

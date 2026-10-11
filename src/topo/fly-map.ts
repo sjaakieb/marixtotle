@@ -145,8 +145,55 @@ export interface VliegOpties {
 	cam: Camera;
 	heli: HeliState;
 	reveal: Reveal | null;
+	/** Bezochte verkeerde steden: kleine rode markeringen (zusje van Reveal). */
+	fouten: readonly FouteMarkering[];
 	koers: number;
 	frame: number;
+}
+
+/** Bezochte verkeerde stad (wereld-coördinaten + label). */
+export interface FouteMarkering {
+	x: number;
+	y: number;
+	naam: string;
+}
+
+/** Kleine rode markering bij een bezochte verkeerde stad: ringetje, stip
+ *  en kleine naam — de kleine variant van de reveal na landen/tijd-op. */
+export function tekenFouten(
+	ctx: CanvasRenderingContext2D,
+	toX: NaarScherm,
+	toY: NaarScherm,
+	fouten: readonly FouteMarkering[],
+	zoom: number,
+): void {
+	const zv = Math.min(zoom, 14);
+	// Ongeveer half zo groot als de reveal-tekst, minimaal leesbaar.
+	const fs = Math.max(10, Math.round((14 + zv * 2) * 0.45));
+	ctx.textAlign = "center";
+	for (const f of fouten) {
+		const x = toX(f.x);
+		const y = toY(f.y);
+		ctx.strokeStyle = "rgba(255,89,100,.9)";
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		ctx.arc(x, y, 11, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.fillStyle = "#ff5964";
+		ctx.strokeStyle = "#000";
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		ctx.arc(x, y, 5, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+		ctx.font = `bold ${fs}px monospace`;
+		const ly = y + 21;
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = "rgba(0,0,0,.8)";
+		ctx.strokeText(f.naam, x, ly);
+		ctx.fillStyle = "#fff";
+		ctx.fillText(f.naam, x, ly);
+	}
 }
 
 /** Vliegbeeld: géén verklap-stip; camera volgt de heli; reveal pas ná landen/tijd-op. */
@@ -199,6 +246,8 @@ export function renderFly(
 		ctx.fill();
 		ctx.stroke();
 	}
+	// kleine markeringen bij bezochte verkeerde steden (blijven staan tot de volgende vraag)
+	if (o.fouten.length > 0) tekenFouten(ctx, toX, toY, o.fouten, o.cam.zoom);
 	// reveal-ring ná afloop (leren waar het was)
 	if (o.reveal) {
 		const age = (Date.now() - o.reveal.t0) / 1000;

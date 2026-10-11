@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cancelSpeech, speak } from "@/lib/speech";
 import { dempFaktor, frameStap, volgFaktor } from "./fly-fysica";
-import type { Camera, HeliState, Reveal } from "./fly-map";
+import type { Camera, FouteMarkering, HeliState, Reveal } from "./fly-map";
 import {
 	WERELD_HOOGTE as H,
 	project,
@@ -15,6 +15,7 @@ import {
 import {
 	type FlyItem,
 	type FlyRichting,
+	flyMaxPerVraag,
 	flyOordeelBijPct,
 	flySpeelveldMidden,
 	flyVraagNaam,
@@ -128,6 +129,8 @@ interface Engine {
 	pauzeer: boolean;
 	vrijgesteld: Set<number>;
 	bezochtVerkeerd: Set<number>;
+	/** Markeringen van bezochte verkeerde steden (deze vraag). */
+	fouteMarkers: FouteMarkering[];
 	druk: Set<number>;
 	flying: boolean;
 	settings: FlyInstellingen;
@@ -165,6 +168,7 @@ function nieuweEngine(settings: FlyInstellingen, items: FlyItem[]): Engine {
 		pauzeer: false,
 		vrijgesteld: new Set(),
 		bezochtVerkeerd: new Set(),
+		fouteMarkers: [],
 		druk: new Set(),
 		flying: false,
 		settings,
@@ -266,6 +270,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 			cam: e.cam,
 			heli: e.heli,
 			reveal: e.reveal,
+			fouten: e.fouteMarkers,
 			koers: e.koers,
 			frame: e.frame,
 		});
@@ -325,7 +330,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 		const e = eng.current;
 		stopTimers();
 		if (e.flying) exitFlyView();
-		const max = e.reeks.length * 10;
+		const max = e.reeks.length * flyMaxPerVraag(e.settings.level);
 		const pct = max ? Math.round((e.score / max) * 100) : 0;
 		const oordeel = flyOordeelBijPct(pct);
 		setVraag(null);
@@ -447,6 +452,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 					e.vrijgesteld.add(s.n);
 			}
 			e.bezochtVerkeerd = new Set();
+			e.fouteMarkers = [];
 			e.druk = new Set();
 			for (const a of e.reeks) {
 				for (const b of e.reeks) {
@@ -639,6 +645,11 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 						WAARSCHUW_RADIUS_SCHERM_PX / e.cam.zoom
 					) {
 						e.bezochtVerkeerd.add(s.n);
+						e.fouteMarkers.push({
+							x: q.x,
+							y: q.y,
+							naam: `${s.hoofdstad[0]} (${s.land})`,
+						});
 						e.tijdOver = Math.max(STRAF_MIN_REST, e.tijdOver - STRAF_SECONDEN);
 						flyAfkeurGeluid();
 						break;
@@ -667,6 +678,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 		e.prevTarget = null;
 		e.reveal = null;
 		e.target = null;
+		e.fouteMarkers = [];
 		e.vraagRichting = null;
 		e.heli = { x: 480, y: 240, vx: 0, vy: 0 };
 		setVraag(null);
@@ -699,6 +711,7 @@ export function useFlyRun(allItems: FlyItem[], settings: FlyInstellingen) {
 		e.reeks = [];
 		e.target = null;
 		e.reveal = null;
+		e.fouteMarkers = [];
 		e.vraagRichting = null;
 		setVraag(null);
 		setFeedback(null);

@@ -4,6 +4,7 @@ import {
 	type FlyItem,
 	flyItemsFromChapter,
 	flyLevelForChapterId,
+	flyMaxPerVraag,
 	flyOordeelBijPct,
 	flySpeelveldMidden,
 	flyVraagNaam,
@@ -124,6 +125,17 @@ describe("volgendeRichting", () => {
 		expect(starts.has("hoofdstad-naar-land")).toBe(true);
 		expect(volgendeRichting("land-naar-hoofdstad")).toBe("hoofdstad-naar-land");
 		expect(volgendeRichting("hoofdstad-naar-land")).toBe("land-naar-hoofdstad");
+	});
+});
+
+describe("flyMaxPerVraag", () => {
+	it("is 10 + 1,2 × vliegtijd: score kan nooit boven max uitkomen", () => {
+		// Landingsscore = max(4, round(10 + resterende seconden × 1,2)).
+		expect(flyMaxPerVraag(1)).toBe(40); // 25s
+		expect(flyMaxPerVraag(2)).toBe(34); // 20s
+		expect(flyMaxPerVraag(3)).toBe(29); // 16s
+		expect(flyMaxPerVraag(4)).toBe(27); // 14s
+		expect(flyMaxPerVraag(5)).toBe(24); // 12s
 	});
 });
 
