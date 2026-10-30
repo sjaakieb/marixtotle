@@ -71,10 +71,10 @@ export default function Home() {
 												<Link
 													key={v.id}
 													href={`/period/${period.id}/${v.id}`}
-													className="pixel-btn flex items-center gap-2 bg-stone-100 px-2 py-2 hover:bg-amber-100 dark:bg-stone-800 dark:hover:bg-amber-950"
+													className="pixel-btn flex flex-col items-center gap-1 bg-stone-100 px-2 py-2 text-center hover:bg-amber-100 sm:flex-row sm:gap-2 sm:text-left dark:bg-stone-800 dark:hover:bg-amber-950"
 												>
-													<span className="text-xl">{v.flag}</span>
-													<span className="font-pixel text-[10px] leading-tight text-stone-700 dark:text-stone-200">
+													<span className="text-xl leading-none">{v.flag}</span>
+													<span className="font-pixel text-[8px] leading-tight text-stone-700 sm:text-[10px] dark:text-stone-200">
 														{v.label}
 													</span>
 												</Link>
