@@ -20,6 +20,7 @@ export default async function WordsPage({
 	if (!chapter) notFound();
 
 	const lang = getLanguage(chapter.language ?? "latin");
+	const periodHref = `/period/${chapter.year ?? 1}-${chapter.period ?? 1}/${chapter.language ?? "latin"}`;
 	const vocabCount = getMasteryItems(chapter).filter(
 		(i) => i.kind === "vocab",
 	).length;
@@ -56,10 +57,10 @@ export default async function WordsPage({
 							Oefenen →
 						</Link>
 						<Link
-							href="/"
+							href={periodHref}
 							className="pixel-btn bg-white px-3 py-1.5 text-center font-pixel text-[9px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							← Overzicht
+							← Onderwerpen
 						</Link>
 					</div>
 				</div>

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LANGUAGES, type LanguageId } from "@/lib/languages";
 import {
 	type AllProgress,
 	getChapterStats,
@@ -58,48 +57,7 @@ const languageMeta: Record<
 	},
 };
 
-function LanguageTab({
-	active,
-	onClick,
-	flag,
-	label,
-	count,
-}: {
-	active: boolean;
-	onClick: () => void;
-	flag: string;
-	label: string;
-	count: number;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={[
-				"pixel-btn flex items-center gap-2 px-3 py-2 font-pixel text-[10px]",
-				active
-					? "bg-stone-900 text-lime-300 dark:bg-lime-400 dark:text-stone-900"
-					: "bg-white text-stone-700 dark:bg-stone-900 dark:text-stone-200",
-			].join(" ")}
-		>
-			<span className="text-sm">{flag}</span>
-			<span>{label}</span>
-			<span
-				className={[
-					"ml-1 px-1.5 py-0.5 font-terminal text-lg leading-none",
-					active
-						? "bg-lime-400 text-stone-900 dark:bg-stone-900 dark:text-lime-300"
-						: "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
-				].join(" ")}
-			>
-				{count}
-			</span>
-		</button>
-	);
-}
-
-export function ChapterBrowser({ chapters }: Props) {
-	const [selected, setSelected] = useState<LanguageId | "all">("all");
+export function ChapterList({ chapters }: Props) {
 	const [progress, setProgress] = useState<AllProgress>({});
 
 	useEffect(() => {
@@ -119,111 +77,22 @@ export function ChapterBrowser({ chapters }: Props) {
 		};
 	}, []);
 
-	const filtered =
-		selected === "all"
-			? chapters
-			: chapters.filter((c) => (c.language ?? "latin") === selected);
-
-	const grouped = LANGUAGES.map((lang) => ({
-		lang,
-		chapters: chapters.filter((c) => (c.language ?? "latin") === lang.id),
-	})).filter((g) => g.chapters.length > 0);
-
-	// When filtered = all, show grouped sections. Otherwise show flat list.
-	const showGrouped = selected === "all";
-
 	return (
-		<div className="space-y-6">
-			{/* Language menu */}
-			<div className="flex flex-wrap gap-3">
-				<button
-					type="button"
-					onClick={() => setSelected("all")}
-					className={[
-						"pixel-btn px-3 py-2 font-pixel text-[10px]",
-						selected === "all"
-							? "bg-stone-900 text-lime-300 dark:bg-lime-400 dark:text-stone-900"
-							: "bg-white text-stone-700 dark:bg-stone-900 dark:text-stone-200",
-					].join(" ")}
-				>
-					Alle vakken
-					<span
-						className={[
-							"ml-2 px-1.5 py-0.5 font-terminal text-lg leading-none",
-							selected === "all"
-								? "bg-lime-400 text-stone-900 dark:bg-stone-900 dark:text-lime-300"
-								: "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
-						].join(" ")}
-					>
-						{chapters.length}
-					</span>
-				</button>
-				{LANGUAGES.map((l) => {
-					const count = chapters.filter(
-						(c) => (c.language ?? "latin") === l.id,
-					).length;
-					if (count === 0) return null;
-					return (
-						<LanguageTab
-							key={l.id}
-							active={selected === l.id}
-							onClick={() => setSelected(l.id as LanguageId)}
-							flag={l.flag}
-							label={l.label}
-							count={count}
-						/>
-					);
-				})}
-			</div>
-
-			{/* Chapter list */}
-			{showGrouped ? (
-				<div className="space-y-8">
-					{grouped.map(({ lang, chapters: langChapters }) => {
-						const meta = languageMeta[lang.id];
-						return (
-							<div key={lang.id}>
-								<div className="mb-3 flex items-center gap-2">
-									<span className="text-xl">{meta.flag}</span>
-									<h3 className="font-pixel text-[11px] text-stone-900 dark:text-stone-50">
-										{meta.label}
-									</h3>
-									<span className="text-xl text-stone-500 dark:text-stone-400">
-										• {meta.description}
-									</span>
-									<span className="ml-auto font-terminal text-lg text-stone-400 dark:text-stone-500">
-										{langChapters.length} onderwerp
-										{langChapters.length !== 1 ? "en" : ""}
-									</span>
-								</div>
-								<div className="grid gap-5">
-									{langChapters.map((ch) => (
-										<ChapterCard
-											key={ch.id}
-											chapter={ch}
-											progress={progress[ch.id]}
-										/>
-									))}
-								</div>
-							</div>
-						);
-					})}
-				</div>
-			) : (
-				<div className="grid gap-5">
-					{filtered.map((ch) => (
-						<ChapterCard key={ch.id} chapter={ch} progress={progress[ch.id]} />
-					))}
-					{filtered.length === 0 && (
-						<div className="pixel-panel bg-white p-6 text-center text-xl text-stone-500 dark:bg-stone-900 dark:text-stone-400">
-							Geen onderwerpen voor dit vak.
-						</div>
-					)}
+		<div className="grid gap-5">
+			{chapters.map((ch) => (
+				<ChapterCard key={ch.id} chapter={ch} progress={progress[ch.id]} />
+			))}
+			{chapters.length === 0 && (
+				<div className="pixel-panel bg-white p-6 text-center text-xl text-stone-500 dark:bg-stone-900 dark:text-stone-400">
+					Geen onderwerpen voor dit vak in deze periode.
 				</div>
 			)}
 		</div>
 	);
 }
+
+/** @deprecated Use ChapterList — filters zijn vervangen door de vak-pagina. */
+export const ChapterBrowser = ChapterList;
 
 function ChapterCard({
 	chapter,

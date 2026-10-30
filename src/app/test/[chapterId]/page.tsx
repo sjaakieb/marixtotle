@@ -19,6 +19,7 @@ export default async function TestPage({
 	if (!chapter) notFound();
 
 	const lang = getLanguage(chapter.language ?? "latin");
+	const periodHref = `/period/${chapter.year ?? 1}-${chapter.period ?? 1}/${chapter.language ?? "latin"}`;
 
 	return (
 		<div className="bg-pixel-grid min-h-dvh bg-stone-100 dark:bg-stone-950">
@@ -42,10 +43,10 @@ export default async function TestPage({
 					<div className="flex shrink-0 flex-col items-end gap-3 sm:flex-row sm:items-center">
 						<ThemeToggle />
 						<Link
-							href="/"
+							href={periodHref}
 							className="pixel-btn bg-white px-3 py-1.5 font-pixel text-[9px] text-stone-700 dark:bg-stone-800 dark:text-stone-200"
 						>
-							← Overzicht
+							← Onderwerpen
 						</Link>
 					</div>
 				</div>

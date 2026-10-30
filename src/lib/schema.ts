@@ -92,6 +92,10 @@ export const chapterSchema = z.object({
 	description: z.string().optional(),
 	language: languageIdSchema.default("latin"),
 	exercises: z.array(exerciseSchema).min(1),
+	/** Curriculum grouping: school year (1-based). Defaults to 1. */
+	year: z.number().int().min(1).optional(),
+	/** Curriculum grouping: period within the year (1-based). Defaults to 1. */
+	period: z.number().int().min(1).optional(),
 });
 
 export const chaptersSchema = z.array(chapterSchema);

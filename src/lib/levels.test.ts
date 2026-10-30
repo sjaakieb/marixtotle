@@ -3,6 +3,7 @@ import {
 	applyResult,
 	averageLevel,
 	bandForStored,
+	buildPeriodTestSession,
 	buildQuestion,
 	buildQuestionAtLevel,
 	buildSession,
@@ -352,5 +353,71 @@ describe("levels", () => {
 		expect(sessionGrade(7, 10)).toBe(7);
 		expect(sessionGrade(0, 10)).toBe(0);
 		expect(averageLevel([{ level: 1 }, { level: 3 }] as never)).toBe(2);
+	});
+});
+
+describe("buildPeriodTestSession", () => {
+	const mixed: MasteryItem[] = [
+		...Array.from(
+			{ length: 18 },
+			(_, i) =>
+				({
+					kind: "vocab",
+					key: `w${i}`,
+					nl: `nl${i}`,
+					foreign: `fr${i}`,
+					nlAlternatives: [],
+					foreignAlternatives: [],
+					wrongNl: [],
+					wrongForeign: [],
+					language: "french",
+				}) as MasteryItem,
+		),
+		// Dutch spelling drill (declension, no pre-authored options)
+		{
+			kind: "declension",
+			key: "nww1-01",
+			prompt: "De piloot … het vliegtuig (landen)",
+			answer: "landt",
+			alternatives: [],
+			wrongAnswers: ["lande"],
+		} as MasteryItem,
+		{
+			kind: "topo",
+			key: "topo-1",
+			country: "Canada",
+			capitals: ["Ottawa"],
+			lat: 45.42,
+			lon: -75.7,
+		} as MasteryItem,
+	];
+
+	it("20 questions: exactly 4 per L1–L5 level, all distinct", () => {
+		const session = buildPeriodTestSession(mixed, 20);
+		expect(session).toHaveLength(20);
+		for (const lv of [1, 2, 3, 4, 5]) {
+			expect(session.filter((q) => q.level === lv)).toHaveLength(4);
+		}
+		expect(new Set(session.map((q) => q.itemKey)).size).toBe(20);
+	});
+
+	it("small pools repeat items but keep the split even", () => {
+		const session = buildPeriodTestSession(items, 20);
+		expect(session).toHaveLength(20);
+		for (const lv of [1, 2, 3, 4, 5]) {
+			expect(session.filter((q) => q.level === lv)).toHaveLength(4);
+		}
+		expect(buildPeriodTestSession([], 20)).toEqual([]);
+		expect(buildPeriodTestSession(mixed, 0)).toEqual([]);
+	});
+
+	it("Dutch declension items work through the L1–L5 engine", () => {
+		const dutch = mixed.find((i) => i.key === "nww1-01") as MasteryItem;
+		const mcq = buildQuestionAtLevel(dutch, 1, mixed);
+		expect(mcq.options).toContain("landt");
+		const bare = buildQuestionAtLevel(dutch, 5, mixed);
+		expect(bare.answer).toBe("landt");
+		expect(bare.options).toBeUndefined();
+		expect(bare.showHint).toBe(false);
 	});
 });

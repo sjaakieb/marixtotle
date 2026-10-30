@@ -13,6 +13,7 @@ import { chapter as frenchVocabulaireF } from "./french/vocabulaireF";
 import { chapter as frenchVocabulaireG } from "./french/vocabulaireG";
 import { chapter as greekAlphabet } from "./greek/alphabet";
 import { chapter as greek1 } from "./greek/beginner1";
+import { chapter as greekBios1 } from "./greek/bios1";
 import { chapter as greekClassical1 } from "./greek/classical1";
 import { chapter as greekTransliteration } from "./greek/transliteration";
 import { chapter as latin2 } from "./latin/minerva2";
@@ -26,6 +27,11 @@ import {
 	level5 as topoLevel5,
 } from "./topo";
 
+// Curriculum grouping: chapters WITHOUT explicit `year`/`period` belong to
+// year 1, period 1 (the original set). Afspraak: alle NIEUWE opdrachten
+// horen bij de laatste periode (momenteel jaar 1, periode 2), tenzij anders
+// vermeld — zet dat dus altijd expliciet (`year: 1, period: 2`) in het
+// content-bestand; zie `src/content/curriculum.ts` voor de periodes.
 const rawChapters = [
 	dutchWerkwoorden1,
 	dutchDeelwoorden2,
@@ -45,6 +51,7 @@ const rawChapters = [
 	greekAlphabet,
 	greekTransliteration,
 	greekClassical1,
+	greekBios1,
 	greek1,
 	topoLevel1,
 	topoLevel2,

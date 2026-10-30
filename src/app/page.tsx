@@ -1,6 +1,10 @@
-import { ChapterBrowser } from "@/components/ChapterBrowser";
+import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { chapters } from "@/content/chapters";
+import {
+	getChaptersForPeriod,
+	PERIODS,
+} from "@/content/curriculum";
+import { LANGUAGES } from "@/lib/languages";
 
 export default function Home() {
 	return (
@@ -27,18 +31,59 @@ export default function Home() {
 			<main className="mx-auto max-w-3xl px-5 pb-12">
 				<div className="pixel-panel bg-white p-6 sm:p-8 dark:bg-stone-900">
 					<h2 className="font-pixel text-xs leading-relaxed text-stone-900 dark:text-stone-50">
-						▶ Kies een vak en onderwerp
+						▶ Kies een periode
 						<span className="animate-pixel-blink">_</span>
 					</h2>
-					<p className="mt-3 text-xl leading-snug text-stone-600 dark:text-stone-400">
-						Hoofdletters maken niet uit en een enkele tikfout wordt meestal
-						vergeven (maar wel gemeld) — ook een ontbrekend accent. Alleen
-						bij Nederlandse werkwoordspelling telt elke letter. Gebruik de
-						balk boven het invoerveld voor speciale tekens.
-					</p>
-
-					<div className="mt-6">
-						<ChapterBrowser chapters={chapters} />
+					<div className="mt-6 grid gap-5">
+						{PERIODS.map((period) => {
+							const periodChapters = getChaptersForPeriod(
+								period.year,
+								period.period,
+							);
+							const vakken = LANGUAGES.filter((l) =>
+								periodChapters.some(
+									(c) => (c.language ?? "latin") === l.id,
+								),
+							);
+							return (
+								<div
+									key={period.id}
+									className="pixel-panel block bg-white p-4 dark:bg-stone-900"
+								>
+									<div className="flex items-center gap-2">
+										<span className="text-xl">📚</span>
+										<Link
+											href={`/period/${period.id}`}
+											className="font-pixel text-[11px] leading-relaxed text-stone-900 hover:underline dark:text-stone-50"
+										>
+											{period.title} →
+										</Link>
+										<span className="ml-auto font-terminal text-lg text-stone-400 dark:text-stone-500">
+											{periodChapters.length}{" "}
+											{periodChapters.length === 1
+												? "opdracht"
+												: "opdrachten"}
+										</span>
+									</div>
+									{vakken.length > 0 && (
+										<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+											{vakken.map((v) => (
+												<Link
+													key={v.id}
+													href={`/period/${period.id}/${v.id}`}
+													className="pixel-btn flex items-center gap-2 bg-stone-100 px-2 py-2 hover:bg-amber-100 dark:bg-stone-800 dark:hover:bg-amber-950"
+												>
+													<span className="text-xl">{v.flag}</span>
+													<span className="font-pixel text-[10px] leading-tight text-stone-700 dark:text-stone-200">
+														{v.label}
+													</span>
+												</Link>
+											))}
+										</div>
+									)}
+								</div>
+							);
+						})}
 					</div>
 				</div>
 

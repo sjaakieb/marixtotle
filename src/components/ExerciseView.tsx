@@ -653,6 +653,11 @@ function Feedback({
 					<span className="font-bold">{answer}</span>
 				</div>
 			)}
+			{correct && !isTypo && !isAlternative && (
+				<div className="mt-2 text-xl text-emerald-700 dark:text-emerald-300">
+					Volledig antwoord: <span className="font-bold">{answer}</span>
+				</div>
+			)}
 			{!correct && (
 				<div className="mt-2 text-xl text-stone-700 dark:text-stone-300">
 					Correct antwoord: <span className="font-bold">{answer}</span>

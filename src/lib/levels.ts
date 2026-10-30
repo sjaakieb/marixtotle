@@ -520,6 +520,53 @@ export function buildSession(
 }
 
 /**
+ * Period ("periode-toets") session: `size` questions sampled across the
+ * chapters of ONE vak within a period, levels L1–L5 in equal
+ * representation — as even as possible, e.g. 4/4/4/4/4 for 20.
+ * Distinct items first (shuffled); repeats (small pools) keep cycling
+ * levels so the split stays even. Stored levels are irrelevant.
+ * Dutch (declension) items work through the same L1–L5 engine here:
+ * L1/L2 meerkeuze, L3/L4 typen met hint, L5 typen zonder hint.
+ */
+export function buildPeriodTestSession(
+	items: MasteryItem[],
+	size: number = 20,
+): GeneratedQuestion[] {
+	if (items.length === 0 || size <= 0) return [];
+	const testLevels: Level[] = [1, 2, 3, 4, 5];
+	const picked: MasteryItem[] = [];
+	const seen = new Set<string>();
+	// First pass: distinct words, shuffled.
+	for (const it of shuffle(items)) {
+		if (picked.length >= size) break;
+		if (seen.has(it.key)) continue;
+		seen.add(it.key);
+		picked.push(it);
+	}
+	// Second pass: reshuffled repeats for small pools.
+	while (picked.length < size) {
+		const round = shuffle(items);
+		if (round.length === 0) break;
+		let added = false;
+		for (const it of round) {
+			if (picked.length >= size) break;
+			picked.push(it);
+			added = true;
+		}
+		if (!added) break;
+	}
+	const questions = picked.map((it, idx) =>
+		buildQuestionAtLevel(
+			it,
+			testLevels[idx % testLevels.length] as Level,
+			items,
+		),
+	);
+	// Shuffle question order so levels are mixed; counts stay exact.
+	return shuffle(questions);
+}
+
+/**
  * Exam ("toets") session for a fully mastered chapter: `size` questions over
  * various words, levels round-robin L3/L4/L5 (as evenly as possible: 4/3/3
  * for 10). Distinct words first; repeats (small chapters) keep cycling
