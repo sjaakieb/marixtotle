@@ -105,7 +105,7 @@ export function WordListClient({ chapter }: Props) {
 				(p) =>
 					p.nl.toLowerCase().includes(q) ||
 					p.foreign.toLowerCase().includes(q) ||
-					(p.hint && p.hint.toLowerCase().includes(q)),
+					(p.hint?.toLowerCase().includes(q) ?? false),
 			);
 		}
 		list.sort((a, b) =>

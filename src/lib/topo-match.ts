@@ -46,15 +46,15 @@ export function topoLevenshtein(a: string, b: string): number {
 		i,
 		...Array(n).fill(0),
 	]);
-	for (let j = 1; j <= n; j++) d[0]![j] = j;
+	for (let j = 1; j <= n; j++) d[0][j] = j;
 	for (let i = 1; i <= m; i++)
 		for (let j = 1; j <= n; j++)
-			d[i]![j] = Math.min(
-				d[i - 1]![j]! + 1,
-				d[i]![j - 1]! + 1,
-				d[i - 1]![j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+			d[i][j] = Math.min(
+				d[i - 1][j] + 1,
+				d[i][j - 1] + 1,
+				d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
 			);
-	return d[m]![n]!;
+	return d[m][n];
 }
 
 export type TopoGrade = "exact" | "typo" | "wrong";

@@ -39,7 +39,7 @@ const items: MasteryItem[] = [
 
 function topo(key: string): TopoItem {
 	const it = items.find((i) => i.key === key);
-	if (!it || it.kind !== "topo") throw new Error(`missing ${key}`);
+	if (it?.kind !== "topo") throw new Error(`missing ${key}`);
 	return it;
 }
 

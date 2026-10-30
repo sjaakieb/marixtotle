@@ -1,20 +1,21 @@
 # CapRover / Coolify ready - Next.js standalone
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 
 FROM base AS deps
 WORKDIR /app
 # better-sqlite3 ships no prebuilt binary for node:24-alpine, so it compiles
 # from source via node-gyp (needs Python + a C++ toolchain, deps stage only).
 RUN apk add --no-cache python3 make g++
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# packageManager in package.json pins pnpm; corepack shims it in.
+RUN corepack enable && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN pnpm run build
 
 FROM base AS runner
 WORKDIR /app

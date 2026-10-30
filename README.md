@@ -27,11 +27,13 @@ See `src/lib/schema.ts:1` for types. Example in `src/content/chapters.ts:1` (Cap
 
 ## Getting Started
 ```bash
-npm install
-npm run dev   # http://localhost:3000
-npm test      # vitest
-npm run build
+pnpm install       # pnpm regelt zelf Node 26 via devEngines.runtime
+pnpm dev   # http://localhost:3000
+pnpm test  # vitest
+pnpm build
 ```
+Node-versiebeheer gaat via pnpm (`pnpm runtime`), niet via nvm/fnm.
+Vereist: pnpm >= 12 (zie `packageManager` in package.json).
 
 ## Deploy (CapRover / Coolify)
 - **Dockerfile** at root uses Next.js `output: "standalone"` (multi-stage, runs on :3000)
