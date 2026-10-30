@@ -7,11 +7,13 @@ WORKDIR /app
 # from source via node-gyp (needs Python + a C++ toolchain, deps stage only).
 RUN apk add --no-cache python3 make g++
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# packageManager in package.json pins pnpm; corepack shims it in.
-RUN corepack enable && pnpm install --frozen-lockfile
+# node:26-alpine ships without corepack, so install the pinned pnpm
+# directly (keep in sync with `packageManager` in package.json).
+RUN npm install -g pnpm@12.17.0 && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
+RUN npm install -g pnpm@12.17.0
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
