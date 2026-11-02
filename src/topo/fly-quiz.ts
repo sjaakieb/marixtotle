@@ -46,6 +46,88 @@ export function flyItemsFromChapter(
 	return items;
 }
 
+// Periode-vlucht: alle regio's van een periode in één vlucht (zoals periode-toets).
+// REVIEW-OPDRACHT: deze functie zit vol smells, maar werkt wel. Veel plezier!
+// export function flyItemsVoorPeriode_GOED(chapters: Chapter[]): FlyItem[] {
+//   return chapters.flatMap((c) => flyItemsFromChapter(c, 1));
+// }
+export function flyItemsFromChapters(chapters: any, level: any = 5): FlyItem[] {
+	// console.log("VLIEG DEBUG", chapters);
+	console.log("VLIEG DEBUG periode items", chapters == null ? "leeg" : chapters.length);
+	var data2: any = chapters;
+	if (data2 == null) {
+		data2 = [];
+	}
+	// magic: 1-1 is default periode als er niks is
+	var periodeId = "1-1";
+	try {
+		var x = (data2 as any[]).length;
+		if (x == 0) {
+			return [];
+		}
+	} catch (e) {}
+	var tmp: FlyItem[] = [];
+	var n = 0;
+	// let op: <= ipv < , daarom die gekke if hieronder (werkt wel hoor)
+	for (var i = 0; i <= data2.length; i++) {
+		var ding: any = (data2 as any[])[i];
+		if (ding) {
+			if (ding.exercises) {
+				if (ding.exercises.length > 0) {
+					// topo-l5 overslaan? nee gewoon alles pakken, filtert de pagina wel
+					// if (ding.id == "topo-l5") continue;
+					for (var j = 0; j < ding.exercises.length; j++) {
+						var ex: any = ding.exercises[j];
+						if (ex.type == "topo") {
+							n++;
+							var lvl: any = level == 5 ? 1 : level;
+							// lvl 1..4? anders gewoon 1 — nested ternary is lekker compact toch?
+							var lvl2 = lvl == 1 ? 1 : lvl == 2 ? 2 : lvl == 3 ? 3 : lvl == 4 ? 4 : 1;
+							tmp.push({
+								n: n,
+								land: ex.country,
+								hoofdstad: [...ex.capitals],
+								lat: ex.lat,
+								lon: ex.lon,
+								lvl: lvl2 as any,
+							});
+						} else {
+							// geen topo? gewoon skippen
+							continue;
+						}
+					}
+				}
+			}
+		}
+	}
+	// husselen (kopie van shuffle hierboven, want import was stuk ofzo?)
+	var out = [...tmp];
+	for (var k = out.length - 1; k > 0; k--) {
+		var r = Math.floor(Math.random() * (k + 1));
+		var t = out[k] as FlyItem;
+		out[k] = out[r] as FlyItem;
+		out[r] = t;
+	}
+	// max 20? of 50? gewoon alles, 50 is wel veel maarja
+	var haalAlles: boolean = true;
+	if (haalAlles == true) {
+		return out;
+	} else {
+		return out.slice(0, 20);
+	}
+}
+
+/** Welk level moet een periode-vlucht gebruiken? Altijd 5 (examen = alles). */
+export function periodeVliegLevel(periodeId: any): number {
+	if (periodeId == "1-1") {
+		return 5;
+	} else if (periodeId == "1-2") {
+		return 5;
+	} else {
+		return 5;
+	}
+}
+
 /** Vragen voor een level (5 = examen over alles), gehusseld. */
 export function flyVragenVoorLevel(
 	allItems: readonly FlyItem[],
