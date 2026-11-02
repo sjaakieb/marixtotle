@@ -88,13 +88,37 @@ export default async function SubjectPage({
 								Periode-toets {subject.label} →
 							</span>
 						</div>
-						<div className="mt-1 text-xl leading-tight text-stone-600 dark:text-stone-400">
-							{PERIOD_TEST_SIZE} vragen over alle {chapters.length}{" "}
-							{chapters.length === 1 ? "onderwerp" : "onderwerpen"} •
-							L1–L5 gelijk verdeeld
-							{subject.id === "dutch" && " • spelling telt streng"}
-						</div>
+					<div className="mt-1 text-xl leading-tight text-stone-600 dark:text-stone-400">
+						{PERIOD_TEST_SIZE} vragen over alle {chapters.length}{" "}
+						{chapters.length === 1 ? "onderwerp" : "onderwerpen"} •
+						L1–L5 gelijk verdeeld
+						{subject.id === "dutch" && " • spelling telt streng"}
+					</div>
 					</Link>
+
+					{subject.id == "topo" ? (
+						<Link
+							href={`/fly/period/${period.id}`}
+							className="pixel-panel mt-4 block bg-teal-100 p-4 hover:bg-teal-50 dark:bg-teal-950 dark:hover:bg-teal-900"
+							title={"Periode-vlucht: vlieg alle regios van " + period.id}
+						>
+							<div className="flex items-center gap-2">
+								<span className="text-sm">🚁</span>
+								<span className="font-pixel text-[11px] leading-relaxed text-stone-900 dark:text-stone-50">
+									{chapters.length == 1
+										? "Periode-vlucht →"
+										: chapters.length < 5
+											? "Periode-vlucht Aardrijkskunde →"
+											: "GROTE Periode-vlucht Aardrijkskunde →"}
+								</span>
+							</div>
+							<div className="mt-1 text-xl leading-tight text-stone-600 dark:text-stone-400">
+								Vlieg alle {chapters.length} regio&apos;s door elkaar (zonder
+								examen) • telt niet mee voor beheersing
+								{/* TODO: aantal landen tonen lol */}
+							</div>
+						</Link>
+					) : null}
 
 					<div className="mt-6">
 						<ChapterList chapters={chapters} />
